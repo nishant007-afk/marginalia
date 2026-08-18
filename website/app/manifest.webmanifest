@@ -1,0 +1,25 @@
+{
+  "name": "Marginalia",
+  "short_name": "Marginalia",
+  "description": "A quiet notebook for capturing what you notice while reading. Works offline, keeps everything on your device.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#17150f",
+  "theme_color": "#17150f",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

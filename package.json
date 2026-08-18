@@ -1,0 +1,46 @@
+{
+  "name": "marginalia",
+  "productName": "Marginalia",
+  "version": "1.0.0",
+  "description": "A quiet companion for capturing what you notice while reading. Observe, connect, write, save, return later.",
+  "main": "src/main/main.js",
+  "author": "Marginalia",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "smoke": "cross-env SMOKE_TEST=1 electron .",
+    "test": "node test/store.test.js",
+    "check": "node scripts/check.js",
+    "dist": "electron-builder --win nsis",
+    "icons": "electron scripts/make-icons.js"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.marginalia.app",
+    "productName": "Marginalia",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "website/**/*",
+      "!website/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}

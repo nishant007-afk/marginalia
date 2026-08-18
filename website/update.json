@@ -1,15 +1,16 @@
 {
-  "versionCode": 4,
-  "versionName": "1.3.0",
+  "versionCode": 5,
+  "versionName": "1.4.0",
   "apkUrl": "Marginalia.apk",
   "notes": [
     "The app now fits every phone screen — the top is no longer cut off by the notch or status bar.",
-    "Removed the \"Open in Chrome to install\" banner that appeared on the top.",
-    "Update prompts now appear once per new version with the full list of changes, and stop nagging once you dismiss them.",
-    "In-app updates: see a notice when a newer Marginalia is available and install it right from the app.",
-    "Only one floating pen — the quick-capture window follows the pen wherever you drag it.",
-    "Cleaner, roomier interface with Font Awesome icons instead of emojis.",
-    "More reliable syncing with clearer error messages."
+    "Back button added to the top bar: go back to the previous screen or straight home from any page.",
+    "The Android back key also navigates back through the app properly.",
+    "The floating pen is removed when you close the app — it only stays while the app is open.",
+    "App updates: you'll see an \"Update available\" notice with the full list of changes and can install right from the app.",
+    "More reliable up-to-date version info in Settings with a manual 'Check for app update'.",
+    "Only one floating pen, and the quick-capture window follows the pen wherever you drag it.",
+    "Cleaner, roomier interface with Font Awesome icons instead of emojis."
   ],
   "minVersionCode": 1
 }

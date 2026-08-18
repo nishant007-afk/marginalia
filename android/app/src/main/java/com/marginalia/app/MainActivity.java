@@ -24,9 +24,7 @@ import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowCompat;
 
 import java.io.File;
 
@@ -65,14 +63,10 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         setContentView(webView);
 
-        // Keep the web content inside the safe area on every phone shape:
-        // below the status bar / notch and above the navigation bar.
-        ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
-            Insets bars = windowInsets.getInsets(
-                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(0, bars.top, 0, bars.bottom);
-            return windowInsets;
-        });
+        // Opt out of edge-to-edge enforcement on every Android version so the
+        // web content always fits below the status bar / notch and above the
+        // navigation bar, regardless of screen shape.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -183,6 +177,15 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getAppVersionName() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
         public void updateApp(String url) {
             runOnUiThread(() -> downloadAndInstall(url));
         }
@@ -269,15 +272,21 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         try { unregisterReceiver(downloadReceiver); } catch (Exception ignored) {}
+        stopFloatingPen();
         webView.destroy();
     }
 
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            moveTaskToBack(true);
-        }
+        // Let the app's own back navigation (close editor/panel/modal, go to
+        // the previous view) handle the button first. Only when nothing is
+        // open does the app move to the background.
+        webView.evaluateJavascript(
+            "window.__dispatchBack ? window.__dispatchBack() : false",
+            value -> {
+                if (!"true".equals(value)) {
+                    moveTaskToBack(true);
+                }
+            });
     }
 }

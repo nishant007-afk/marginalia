@@ -1,14 +1,13 @@
 {
-  "versionCode": 5,
-  "versionName": "1.4.0",
-  "apkUrl": "Marginalia.apk",
+  "versionCode": 6,
+  "versionName": "1.5.0",
+  "apkUrl": "Marginalia-1.5.0.apk",
   "notes": [
-    "The app now fits every phone screen — the top is no longer cut off by the notch or status bar.",
-    "Back button added to the top bar: go back to the previous screen or straight home from any page.",
-    "The Android back key also navigates back through the app properly.",
-    "The floating pen is removed when you close the app — it only stays while the app is open.",
-    "App updates: you'll see an \"Update available\" notice with the full list of changes and can install right from the app.",
-    "More reliable up-to-date version info in Settings with a manual 'Check for app update'.",
+    "Android downloads now use a versioned file name, so you always get the newest APK — no more stale cached download.",
+    "The app fits every phone screen — the top is no longer cut off by the notch or status bar.",
+    "Back button in the top bar and Android back key navigations built-in.",
+    "The floating pen is removed when you close the app.",
+    "Manual 'Check for app update' in Settings shows your installed version and the available one.",
     "Only one floating pen, and the quick-capture window follows the pen wherever you drag it.",
     "Cleaner, roomier interface with Font Awesome icons instead of emojis."
   ],

@@ -1,4 +1,4 @@
-const CACHE = 'marginalia-v8';
+const CACHE = 'marginalia-v9';
 const STATIC_ASSETS = [
   './', './index.html', './app.js', './store.js',
   './manifest.webmanifest', './favicon.png',

@@ -1,13 +1,6 @@
 'use strict';
 
-/* ================================================================
-   SUPABASE CONFIGURATION
-   
-   1. Go to https://supabase.com and create a free project
-   2. Go to Settings → API → copy the Project URL and anon (public) key
-   3. Paste them below
-   4. Go to SQL Editor and run the schema from supabase/schema.sql
-   ================================================================ */
+/* Supabase configuration */
 
-window.SUPABASE_URL = '';   // e.g. 'https://xxxxx.supabase.co'
-window.SUPABASE_ANON = '';  // e.g. 'eyJhbGciOiJIUzI1NiIs...'
+window.SUPABASE_URL = 'https://ficuepmyaictxorgaq.supabase.co';
+window.SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpY3Flb3BteWFpdGN4b3JxZ2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM3ODYsImV4cCI6MjEwMjYxOTc4Nn0.Bq1feSQxVstxng3yRzFfMHD6jYlf2Z3afRD1O-9M_0o';

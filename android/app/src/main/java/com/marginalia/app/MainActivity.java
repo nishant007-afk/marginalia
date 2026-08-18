@@ -39,6 +39,8 @@ public class MainActivity extends Activity {
 
     private long lastDownloadId = -1;
     private boolean pendingInstall = false;
+    private static final String PEN_PREFS = "pen_prefs";
+    private static final String PEN_ENABLED_KEY = "pen_enabled";
 
     private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
         @Override
@@ -95,6 +97,18 @@ public class MainActivity extends Activity {
                 super.onPageFinished(view, url);
                 injectFloatingPen();
             }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                // If the web content's process dies, reload instead of showing
+                // a dead, unresponsive screen that can look like a crash.
+                view.post(() -> {
+                    try {
+                        view.loadUrl(APP_URL);
+                    } catch (Exception ignored) {}
+                });
+                return true;
+            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -104,7 +118,12 @@ public class MainActivity extends Activity {
             }
         });
 
-        requestPermissions();
+        try {
+            requestPermissions();
+        } catch (Exception e) {
+            // A system permission screen can rarely fail to open; never let it
+            // prevent the app from launching.
+        }
         webView.loadUrl(APP_URL);
 
         // Store reference for FloatingPenService
@@ -129,25 +148,36 @@ public class MainActivity extends Activity {
         }
     }
 
+    private boolean isPenEnabled() {
+        return getSharedPreferences(PEN_PREFS, MODE_PRIVATE).getBoolean(PEN_ENABLED_KEY, true);
+    }
+
+    private void setPenEnabled(boolean enabled) {
+        getSharedPreferences(PEN_PREFS, MODE_PRIVATE).edit().putBoolean(PEN_ENABLED_KEY, enabled).apply();
+    }
+
     private void injectFloatingPen() {
+        if (!isPenEnabled()) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
             startFloatingPen();
         }
     }
 
-void startFloatingPen() {
-    try {
-        Intent serviceIntent = new Intent(this, FloatingPenService.class);
-        serviceIntent.setAction("START");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
+    void startFloatingPen() {
+        try {
+            Intent serviceIntent = new Intent(this, FloatingPenService.class);
+            serviceIntent.setAction("START");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Exception e) {
+            // If the floating pen cannot start on this device, disable it for
+            // this install so it can never crash the app again.
+            setPenEnabled(false);
         }
-    } catch (Exception e) {
-        // Never let a pen service failure take the app down.
     }
-}
 
 private void stopFloatingPen() {
     // Use stopService: unlike startService it has no background restriction,
@@ -173,6 +203,23 @@ private void stopFloatingPen() {
         @JavascriptInterface
         public void showToast(String message) {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
+        }
+
+        @JavascriptInterface
+        public boolean isPenEnabled() {
+            return MainActivity.this.isPenEnabled();
+        }
+
+        @JavascriptInterface
+        public void setPenEnabled(boolean enabled) {
+            runOnUiThread(() -> {
+                setPenEnabled(enabled);
+                if (enabled) {
+                    injectFloatingPen();
+                } else {
+                    stopFloatingPen();
+                }
+            });
         }
 
         @JavascriptInterface

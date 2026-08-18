@@ -2,20 +2,21 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
 permissions:
-  pages: write
-  id-token: write
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+
+      - name: Publish website to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: website
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: website
+          exclude_assets: 'dist'
+          publish_branch: gh-pages

@@ -24,6 +24,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.content.pm.ServiceInfo;
+
 public class FloatingPenService extends Service {
 
     private WindowManager windowManager;
@@ -57,36 +59,48 @@ public class FloatingPenService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        createNotificationChannel();
-        createPenView();
-        createPanelView();
+        try {
+            windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+            createNotificationChannel();
+            createPenView();
+            createPanelView();
+        } catch (Exception e) {
+            // Never let a setup failure take the app's process down.
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if ("STOP".equals(intent != null ? intent.getAction() : null)) {
-            removeViews();
-            stopForeground(true);
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-
-        startForeground(1, buildNotification());
-
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            try {
-                if (penView.getWindowToken() == null) {
-                    windowManager.addView(penView, penParams);
-                }
-            } catch (Exception e) {
-                try {
-                    windowManager.addView(penView, penParams);
-                } catch (Exception ignored) {}
+        try {
+            if ("STOP".equals(intent != null ? intent.getAction() : null)) {
+                removeViews();
+                stopForeground(true);
+                stopSelf();
+                return START_NOT_STICKY;
             }
-        }, 200);
 
-        return START_STICKY;
+            if (Build.VERSION.SDK_INT >= 34) {
+                startForeground(1, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            } else {
+                startForeground(1, buildNotification());
+            }
+
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    if (penView.getWindowToken() == null) {
+                        windowManager.addView(penView, penParams);
+                    }
+                } catch (Exception e) {
+                    try {
+                        windowManager.addView(penView, penParams);
+                    } catch (Exception ignored) {}
+                }
+            }, 200);
+
+            return START_STICKY;
+        } catch (Exception e) {
+            return START_STICKY;
+        }
     }
 
     private void createPenView() {

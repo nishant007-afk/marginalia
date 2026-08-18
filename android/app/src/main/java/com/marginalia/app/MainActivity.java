@@ -197,6 +197,35 @@ private void stopFloatingPen() {
         public void updateApp(String url) {
             runOnUiThread(() -> downloadAndInstall(url));
         }
+
+        @JavascriptInterface
+        public String getCrashLog() {
+            try {
+                File f = new File(getFilesDir(), "logs/crash-log.txt");
+                if (!f.exists()) {
+                    File ext = new File(getExternalFilesDir(null), "Marginalia-crash-log.txt");
+                    if (ext.exists()) f = ext;
+                }
+                if (!f.exists()) return "";
+                java.io.FileInputStream in = new java.io.FileInputStream(f);
+                byte[] buf = new byte[(int) Math.min(f.length(), 16384)];
+                int n = in.read(buf);
+                in.close();
+                return n > 0 ? new String(buf, 0, n) : "";
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public void clearCrashLog() {
+            try {
+                File f = new File(getFilesDir(), "logs/crash-log.txt");
+                if (f.exists()) f.delete();
+                File ext = new File(getExternalFilesDir(null), "Marginalia-crash-log.txt");
+                if (ext.exists()) ext.delete();
+            } catch (Exception ignored) {}
+        }
     }
 
     private String escapeJs(String s) {
@@ -262,9 +291,6 @@ private void stopFloatingPen() {
     protected void onResume() {
         super.onResume();
         webView.onResume();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-            startFloatingPen();
-        }
         if (pendingInstall && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && getPackageManager().canRequestPackageInstalls()) {
             installApk();
         }

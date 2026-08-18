@@ -701,6 +701,24 @@ if (apkCheckBtn) apkCheckBtn.addEventListener('click', async () => {
   if (!found) renderAndroidVersionLine();
 });
 
+/* ---- Crash log (diagnostics helper) ---- */
+const crashBox = document.getElementById('crash-log-box');
+document.getElementById('set-view-crash').addEventListener('click', () => {
+  if (!window.AndroidBridge || !window.AndroidBridge.getCrashLog) {
+    crashBox.textContent = 'Crash log is only available inside the Android app.';
+    crashBox.style.display = 'block';
+    return;
+  }
+  const log = window.AndroidBridge.getCrashLog();
+  crashBox.textContent = log ? log : 'No crash log found. If the app crashes, the details are saved here automatically.';
+  crashBox.style.display = 'block';
+});
+document.getElementById('set-clear-crash').addEventListener('click', () => {
+  if (window.AndroidBridge && window.AndroidBridge.clearCrashLog) window.AndroidBridge.clearCrashLog();
+  crashBox.style.display = 'none';
+  toast('Crash log cleared');
+});
+
 /* ============================================================ UPDATE CHECK */
 function showUpdateBar(version) {
   if (apkUpdate) return;

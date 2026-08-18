@@ -1,14 +1,14 @@
 {
-  "versionCode": 8,
-  "versionName": "1.6.0",
-  "apkUrl": "Marginalia-1.6.0.apk",
+  "versionCode": 9,
+  "versionName": "1.6.1",
+  "apkUrl": "Marginalia-1.6.1.apk",
   "notes": [
-    "Hardened app startup so the app can no longer close immediately on any device.",
-    "The floating pen service is now crash-safe and stops cleanly when you close the app.",
-    "Added a crash log (Settings → Troubleshooting) that records the exact error if anything ever fails — so we can fix it instantly.",
-    "Android downloads use versioned file names, so you always get the newest APK.",
-    "The app fits every phone screen, with a back button and Android back-key navigation.",
-    "Only one floating pen, and the quick-capture window follows the pen wherever you drag it."
+    "Fixed the app closing right after opening on some devices.",
+    "The floating pen now disables itself safely if your device can't run it — it can never crash the app.",
+    "You can turn the floating pen on/off in Settings.",
+    "If the web content ever stops responding, the app reloads it instead of going blank.",
+    "More detailed crash diagnostics, including web errors, in Settings → Troubleshooting.",
+    "Android downloads use versioned file names, so you always get the newest APK."
   ],
   "minVersionCode": 1
 }

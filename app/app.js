@@ -13,6 +13,22 @@ const CATEGORIES = {
 };
 const APP_VERSION = '1.4.0';
 
+/* ---- Capture web-side errors for diagnostics ---- */
+function logJsError(msg) {
+  try {
+    const arr = JSON.parse(localStorage.getItem('marg-js-errors') || '[]');
+    arr.push({ t: new Date().toISOString(), m: String(msg).slice(0, 300) });
+    localStorage.setItem('marg-js-errors', JSON.stringify(arr.slice(-20)));
+  } catch (e) { /* storage full or unavailable */ }
+}
+window.addEventListener('error', (e) => logJsError(e.message || 'Unknown error'));
+window.addEventListener('unhandledrejection', (e) => logJsError('Promise: ' + (e.reason || 'Unknown')));
+
+function getJsErrors() {
+  try { return JSON.parse(localStorage.getItem('marg-js-errors') || '[]'); }
+  catch (e) { return []; }
+}
+
 /* ================================================================ STORE */
 const { Store } = window.MarginaliaStore || {};
 const IDB = {
@@ -342,6 +358,7 @@ $('#ms-start').addEventListener('click', async () => {
 async function renderSettings() {
   renderSyncSettings();
   renderAndroidVersionLine();
+  renderPenToggle();
   const authEl = $('#auth-section');
   if (currentUser) {
     authEl.innerHTML = '<div style="font-size:13px;margin-bottom:8px">Signed in as <strong>'+esc(currentUser.email)+'</strong></div>'+
@@ -704,19 +721,41 @@ if (apkCheckBtn) apkCheckBtn.addEventListener('click', async () => {
 /* ---- Crash log (diagnostics helper) ---- */
 const crashBox = document.getElementById('crash-log-box');
 document.getElementById('set-view-crash').addEventListener('click', () => {
-  if (!window.AndroidBridge || !window.AndroidBridge.getCrashLog) {
-    crashBox.textContent = 'Crash log is only available inside the Android app.';
-    crashBox.style.display = 'block';
-    return;
+  let text = '';
+  if (window.AndroidBridge && window.AndroidBridge.getCrashLog) {
+    text = window.AndroidBridge.getCrashLog();
   }
-  const log = window.AndroidBridge.getCrashLog();
-  crashBox.textContent = log ? log : 'No crash log found. If the app crashes, the details are saved here automatically.';
+  const jsErrors = getJsErrors();
+  if (jsErrors.length) {
+    text += (text ? '\n------ Web errors ------\n' : '') + jsErrors.map((e) => e.t + '  ' + e.m).join('\n');
+  }
+  if (!text) {
+    text = 'No crash log found. If the app crashes, the details are saved here automatically.';
+  }
+  crashBox.textContent = text;
   crashBox.style.display = 'block';
 });
 document.getElementById('set-clear-crash').addEventListener('click', () => {
   if (window.AndroidBridge && window.AndroidBridge.clearCrashLog) window.AndroidBridge.clearCrashLog();
+  try { localStorage.removeItem('marg-js-errors'); } catch (e) {}
   crashBox.style.display = 'none';
   toast('Crash log cleared');
+});
+
+/* ---- Floating pen toggle ---- */
+const penToggle = document.getElementById('set-pen-toggle');
+function renderPenToggle() {
+  if (penToggle && window.AndroidBridge && window.AndroidBridge.isPenEnabled) {
+    penToggle.checked = !!window.AndroidBridge.isPenEnabled();
+  }
+}
+if (penToggle) penToggle.addEventListener('change', () => {
+  if (window.AndroidBridge && window.AndroidBridge.setPenEnabled) {
+    window.AndroidBridge.setPenEnabled(penToggle.checked);
+    toast(penToggle.checked ? 'Floating pen enabled' : 'Floating pen disabled');
+  } else {
+    toast('The floating pen is only available inside the Android app');
+  }
 });
 
 /* ============================================================ UPDATE CHECK */

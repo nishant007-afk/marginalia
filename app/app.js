@@ -96,7 +96,27 @@ function switchView(name) {
   else if (name==='review') renderReview();
   else if (name==='sessions') renderSessions();
   else if (name==='settings') renderSettings();
+  updateBackButton();
 }
+
+function updateBackButton() {
+  const show = state.view !== 'all' || !!state.catView || !!state.editingId ||
+    $('#panel').classList.contains('show') || $('#editor').classList.contains('show') ||
+    !!document.querySelector('.modal.show');
+  $('#btn-back').style.display = show ? 'flex' : 'none';
+}
+
+function goBack() {
+  if ($('#editor').classList.contains('show')) { closeEditor(); return true; }
+  if ($('#panel').classList.contains('show')) { closePanel(); return true; }
+  const modal = document.querySelector('.modal.show');
+  if (modal) { closeModal(modal.id); return true; }
+  if (state.catView) { state.catView = null; renderCategories(); return true; }
+  if (state.view !== 'all') { switchView('all'); return true; }
+  return false;
+}
+window.__dispatchBack = goBack;
+$('#btn-back').addEventListener('click', goBack);
 
 /* ============================================================ SIDEBAR */
 function openSidebar() { $('#sidebar').classList.add('open'); $('#backdrop').classList.add('show'); }
@@ -115,6 +135,7 @@ async function renderCategories() {
     grid.appendChild(card);
   }
   $('#cat-list').innerHTML = '';
+  updateBackButton();
 }
 async function showCategoryNotes(cat) {
   const notes = await store.listNotes({ category: cat });
@@ -126,6 +147,7 @@ async function showCategoryNotes(cat) {
     card.innerHTML = '<div class="card-top"><span class="ct">'+esc(noteTitle(n))+'</span></div>'+(notePreview(n)?'<div class="cp">'+esc(notePreview(n))+'</div>':'')+(n.book?'<div class="cm">'+esc(n.book)+'</div>':'');
     card.onclick = () => openEditor(n.id); el.appendChild(card);
   }
+  updateBackButton();
 }
 
 /* ============================================================ NOTE LIST */
@@ -170,8 +192,9 @@ async function openEditor(id) {
   $('#eb-page').value = note.page||''; $('#eb-source').value = note.sourceText||'';
   $('#eb-ts').textContent = 'Created '+fmtDT(note.createdAt)+' / Modified '+fmtDT(note.updatedAt);
   $('#editor').classList.add('show'); closePanel();
+  updateBackButton();
 }
-function closeEditor() { state.editingId = null; $('#editor').classList.remove('show'); }
+function closeEditor() { state.editingId = null; $('#editor').classList.remove('show'); updateBackButton(); }
 function editorPatch() {
   return { category: $('#eb-cat').value, title: $('#eb-title').value.trim(), content: $('#eb-content').value,
     book: $('#eb-book').value.trim(), author: $('#eb-author').value.trim(), page: $('#eb-page').value.trim(), sourceText: $('#eb-source').value.trim() };
@@ -210,8 +233,9 @@ function openPanel() {
   $('#panel').classList.add('show'); renderPenChips();
   $('#pc-prompt').textContent = CATEGORIES[panelCat].prompt;
   $('#pc-text').value = ''; setTimeout(() => $('#pc-text').focus(), 300);
+  updateBackButton();
 }
-function closePanel() { $('#panel').classList.remove('show'); }
+function closePanel() { $('#panel').classList.remove('show'); updateBackButton(); }
 $('#pc-close').addEventListener('click', async () => {
   const text = $('#pc-text').value.trim();
   if (text) { await store.createNote({category:panelCat,content:text}); toast('Saved'); renderList(); }
@@ -317,6 +341,7 @@ $('#ms-start').addEventListener('click', async () => {
 /* ============================================================ SETTINGS */
 async function renderSettings() {
   renderSyncSettings();
+  renderAndroidVersionLine();
   const authEl = $('#auth-section');
   if (currentUser) {
     authEl.innerHTML = '<div style="font-size:13px;margin-bottom:8px">Signed in as <strong>'+esc(currentUser.email)+'</strong></div>'+
@@ -328,8 +353,8 @@ async function renderSettings() {
       '<div style="font-size:11px;color:var(--ft);margin-top:6px">Create an account to sync notes from any device.</div>';
   }
 }
-window.showAuthModal = () => { $('#modal-auth').classList.add('show'); };
-window.closeModal = (id) => { document.getElementById(id).classList.remove('show'); };
+window.showAuthModal = () => { $('#modal-auth').classList.add('show'); updateBackButton(); };
+window.closeModal = (id) => { document.getElementById(id).classList.remove('show'); updateBackButton(); };
 window.doSignOut = async () => { await signOut(); renderSettings(); toast('Signed out'); };
 window.doSyncNow = async () => { if (!navigator.onLine) { toast('Offline. Will sync when connected.'); return; } toast('Syncing...'); await fullSync(); };
 
@@ -583,21 +608,50 @@ $('#set-restore').addEventListener('click', () => {
 /* ============================================================ ANDROID APP UPDATE */
 let apkUpdate = null;
 
-async function checkApkUpdate() {
+function setApkStatus(msg) {
+  const el = $('#apk-update-status');
+  if (el) el.textContent = msg;
+}
+
+function renderAndroidVersionLine() {
+  const el = $('#android-version-line');
+  if (!el) return;
+  if (window.AndroidBridge) {
+    const code = window.AndroidBridge.getAppVersion ? window.AndroidBridge.getAppVersion() : 0;
+    const name = window.AndroidBridge.getAppVersionName ? window.AndroidBridge.getAppVersionName() : '';
+    el.innerHTML = 'Installed app version: <strong>v' + esc(name || code) + '</strong> <span style="opacity:.75">(code ' + code + ')</span>';
+  } else {
+    el.innerHTML = 'Installed app version: <strong>n/a</strong> <span style="opacity:.75">(opened in a browser — install the APK from the website)</span>';
+  }
+}
+
+async function checkApkUpdate(force) {
   if (!window.AndroidBridge) return false;
   try {
     const base = location.href.replace(/\/app\/.*$/, '/');
     const res = await fetch(base + 'update.json?t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) return false;
+    if (!res.ok) { setApkStatus('Could not reach the update server.'); return false; }
     const meta = await res.json();
-    const installed = (window.AndroidBridge.getAppVersion) ? window.AndroidBridge.getAppVersion() : 0;
-    if (!(meta && meta.versionCode && installed && meta.versionCode > installed)) return false;
-    const laterFor = parseInt(localStorage.getItem('upd-later-v') || '0', 10);
-    if (laterFor >= meta.versionCode) return false;
-    apkUpdate = { meta, url: base + (meta.apkUrl || 'Marginalia.apk') };
-    showApkUpdateModal();
-    return true;
-  } catch (e) { console.log('APK update check failed:', e); }
+    const installedCode = (window.AndroidBridge.getAppVersion) ? window.AndroidBridge.getAppVersion() : 0;
+    if (!(meta && meta.versionCode && installedCode)) { setApkStatus('Could not read the version information.'); return false; }
+    const installedName = (window.AndroidBridge.getAppVersionName) ? window.AndroidBridge.getAppVersionName() : String(installedCode);
+    if (meta.versionCode > installedCode) {
+      const laterFor = parseInt(localStorage.getItem('upd-later-v') || '0', 10);
+      if (!force && laterFor >= meta.versionCode) {
+        setApkStatus('An update is available (v' + meta.versionName + ') — tap "Check for app update" to view it.');
+        return false;
+      }
+      apkUpdate = { meta, url: base + (meta.apkUrl || 'Marginalia.apk') };
+      showApkUpdateModal();
+      setApkStatus('Update available: v' + (installedName || installedCode) + ' → v' + meta.versionName);
+      return true;
+    }
+    setApkStatus('You are up to date (v' + (installedName || installedCode) + ').');
+    return false;
+  } catch (e) {
+    console.log('APK update check failed:', e);
+    setApkStatus('Update check failed: ' + (e.message || 'network error'));
+  }
   return false;
 }
 
@@ -612,11 +666,13 @@ function showApkUpdateModal() {
     ul.appendChild(li);
   }
   $('#modal-update').classList.add('show');
+  updateBackButton();
 }
 
 $('#upd-later').addEventListener('click', () => {
   if (apkUpdate) localStorage.setItem('upd-later-v', String(apkUpdate.meta.versionCode));
   $('#modal-update').classList.remove('show');
+  updateBackButton();
 });
 $('#upd-now').addEventListener('click', () => {
   if (!apkUpdate) return;
@@ -633,6 +689,16 @@ $('#upd-now').addEventListener('click', () => {
     toast('Download started — open the file to install');
   }
   $('#modal-update').classList.remove('show');
+  updateBackButton();
+});
+
+// Manual "Check for app update" in Settings
+const apkCheckBtn = document.getElementById('set-check-apk');
+if (apkCheckBtn) apkCheckBtn.addEventListener('click', async () => {
+  if (!window.AndroidBridge) { toast('Open Marginalia from the Android app to check for app updates'); return; }
+  toast('Checking for updates…');
+  const found = await checkApkUpdate(true);
+  if (!found) renderAndroidVersionLine();
 });
 
 /* ============================================================ UPDATE CHECK */
@@ -724,5 +790,7 @@ document.addEventListener('android-save-note', async (e) => {
   initSupabase(); await initStore(); await getSessionUser();
   renderList(); state.activeSession = await store.getActiveSession();
   updateSyncDot();
+  renderAndroidVersionLine();
+  updateBackButton();
   if (navigator.onLine && currentUser) flushSyncQueue();
 })();

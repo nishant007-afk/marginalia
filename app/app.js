@@ -566,6 +566,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+/* ============================================================ ANDROID BRIDGE */
+document.addEventListener('android-save-note', async (e) => {
+  const { category, content } = e.detail || {};
+  if (content) {
+    await store.createNote({ category: category || 'observe', content });
+    toast('Saved from pen');
+    renderList();
+  }
+});
+
 /* ============================================================ INIT */
 (async function boot() {
   initSupabase(); await initStore(); await getSessionUser();

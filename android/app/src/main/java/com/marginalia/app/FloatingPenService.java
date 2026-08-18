@@ -13,17 +13,14 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -35,10 +32,12 @@ public class FloatingPenService extends Service {
     private WindowManager.LayoutParams penParams;
     private WindowManager.LayoutParams panelParams;
     private boolean panelOpen = false;
+    private int penSize = dpToPx(52);
+    private int panelWidth = dpToPx(300);
+    private int panelHeight = dpToPx(420);
     private String selectedCategory = "observe";
     private static final String CHANNEL_ID = "marginalia_pen";
 
-    // Category definitions
     private static final String[][] CATEGORIES = {
         {"observe", "Observe", "What did you notice?"},
         {"image", "Images", "What image stayed with you?"},
@@ -75,7 +74,6 @@ public class FloatingPenService extends Service {
 
         startForeground(1, buildNotification());
 
-        // Show pen after a short delay
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             try {
                 if (penView.getWindowToken() == null) {
@@ -92,39 +90,31 @@ public class FloatingPenService extends Service {
     }
 
     private void createPenView() {
-        int size = dpToPx(52);
-        int margin = dpToPx(12);
+        penSize = dpToPx(52);
 
-        penView = new View(this);
+        FrameLayout container = new FrameLayout(this);
+        container.setLayoutParams(new FrameLayout.LayoutParams(penSize, penSize));
 
         // Gold circle background
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.OVAL);
         bg.setColor(Color.parseColor("#D4A853"));
-        bg.setSize(size, size);
-        penView.setBackground(bg);
+        container.setBackground(bg);
 
-        // Pen icon (simple plus sign using a View)
-        FrameLayout container = new FrameLayout(this);
-        container.setLayoutParams(new FrameLayout.LayoutParams(size, size));
-
-        // Use a simple "+" as the pen icon
-        TextView icon = new TextView(this);
-        icon.setText("✎");
-        icon.setTextSize(22);
-        icon.setTextColor(Color.parseColor("#111111"));
-        icon.setGravity(Gravity.CENTER);
-        icon.setLayoutParams(new FrameLayout.LayoutParams(size, size));
+        // Pen icon (vector drawable, Font Awesome style)
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.ic_pen);
+        icon.setLayoutParams(new FrameLayout.LayoutParams(penSize, penSize));
         container.addView(icon);
 
         penParams = new WindowManager.LayoutParams(
-            size, size,
+            penSize, penSize,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         );
         penParams.gravity = Gravity.TOP | Gravity.START;
-        penParams.x = margin;
+        penParams.x = dpToPx(12);
         penParams.y = getScreenHeight() / 2;
 
         // Make pen draggable
@@ -153,12 +143,12 @@ public class FloatingPenService extends Service {
                         }
                         penParams.x = initialX + (int) dx;
                         penParams.y = initialY + (int) dy;
-                        // Keep within screen bounds
-                        penParams.x = Math.max(0, Math.min(getScreenWidth() - size, penParams.x));
-                        penParams.y = Math.max(0, Math.min(getScreenHeight() - size - dpToPx(80), penParams.y));
+                        penParams.x = Math.max(0, Math.min(getScreenWidth() - penSize, penParams.x));
+                        penParams.y = Math.max(0, Math.min(getScreenHeight() - penSize - dpToPx(80), penParams.y));
                         try {
                             windowManager.updateViewLayout(penView, penParams);
                         } catch (Exception ignored) {}
+                        if (panelOpen) repositionPanel();
                         return true;
 
                     case MotionEvent.ACTION_UP:
@@ -177,8 +167,8 @@ public class FloatingPenService extends Service {
     private void createPanelView() {
         panelView = buildPanelLayout();
 
-        int panelWidth = dpToPx(300);
-        int panelHeight = dpToPx(380);
+        panelWidth = dpToPx(300);
+        panelHeight = dpToPx(420);
 
         panelParams = new WindowManager.LayoutParams(
             panelWidth, panelHeight,
@@ -189,6 +179,24 @@ public class FloatingPenService extends Service {
         panelParams.gravity = Gravity.TOP | Gravity.START;
         panelParams.x = dpToPx(12);
         panelParams.y = getScreenHeight() / 2 - panelHeight / 2;
+    }
+
+    /** Anchor the panel to the pen's current position, clamped to the screen. */
+    private void repositionPanel() {
+        if (panelParams == null) return;
+        int gap = dpToPx(10);
+        int x = penParams.x + penSize + gap;
+        if (x + panelWidth > getScreenWidth()) {
+            x = penParams.x - panelWidth - gap;
+        }
+        x = Math.max(0, Math.min(getScreenWidth() - panelWidth, x));
+        int y = penParams.y;
+        y = Math.max(0, Math.min(getScreenHeight() - panelHeight - dpToPx(40), y));
+        panelParams.x = x;
+        panelParams.y = y;
+        try {
+            windowManager.updateViewLayout(panelView, panelParams);
+        } catch (Exception ignored) {}
     }
 
     private View buildPanelLayout() {
@@ -226,13 +234,20 @@ public class FloatingPenService extends Service {
         doneBtn.setBackground(doneBg);
         doneBtn.setOnClickListener(v -> closePanel());
         header.addView(doneBtn);
-
         root.addView(header);
 
-        // Category chips (horizontal scroll)
+        // Prompt text (declare BEFORE chips so chip handlers can reference it)
+        final TextView prompt = new TextView(this);
+        prompt.setText(CATEGORIES[0][2]);
+        prompt.setTextColor(Color.parseColor("#D4A853"));
+        prompt.setTextSize(13);
+        prompt.setPadding(0, dpToPx(8), 0, dpToPx(4));
+        root.addView(prompt);
+
+        // Category chips
         LinearLayout chipsRow = new LinearLayout(this);
         chipsRow.setOrientation(LinearLayout.HORIZONTAL);
-        chipsRow.setPadding(0, dpToPx(10), 0, 0);
+        chipsRow.setPadding(0, dpToPx(4), 0, 0);
 
         for (String[] cat : CATEGORIES) {
             TextView chip = new TextView(this);
@@ -248,11 +263,11 @@ public class FloatingPenService extends Service {
 
             final String catKey = cat[0];
             final String catPrompt = cat[2];
+            final LinearLayout chipsRowRef = chipsRow;
             chip.setOnClickListener(v -> {
                 selectedCategory = catKey;
-                // Update chip styles
-                for (int i = 0; i < chipsRow.getChildCount(); i++) {
-                    TextView c = (TextView) chipsRow.getChildAt(i);
+                for (int i = 0; i < chipsRowRef.getChildCount(); i++) {
+                    TextView c = (TextView) chipsRowRef.getChildAt(i);
                     GradientDrawable cb = (GradientDrawable) c.getBackground();
                     if (i == indexOfCategory(catKey)) {
                         c.setTextColor(Color.parseColor("#D4A853"));
@@ -272,19 +287,7 @@ public class FloatingPenService extends Service {
             chipParams.setMarginEnd(dpToPx(6));
             chipsRow.addView(chip, chipParams);
         }
-
         root.addView(chipsRow);
-
-        // Prompt text
-        TextView prompt = new TextView(this);
-        prompt.setText(CATEGORIES[0][2]);
-        prompt.setTextColor(Color.parseColor("#D4A853"));
-        prompt.setTextSize(13);
-        prompt.setPadding(0, dpToPx(8), 0, dpToPx(4));
-        root.addView(prompt);
-
-        // Make prompt accessible to chip click handlers
-        final TextView[] promptRef = {prompt};
 
         // Text input
         EditText input = new EditText(this);
@@ -294,14 +297,13 @@ public class FloatingPenService extends Service {
         input.setTextSize(15);
         input.setMinLines(3);
         input.setMaxLines(5);
-        input.setGravity(Gravity.TOP);
+        input.setGravity(android.view.Gravity.TOP);
         input.setPadding(dpToPx(12), dpToPx(10), dpToPx(12), dpToPx(10));
         GradientDrawable inputBg = new GradientDrawable();
         inputBg.setCornerRadius(dpToPx(12));
         inputBg.setColor(Color.parseColor("#222222"));
         inputBg.setStroke(1, Color.parseColor("#333333"));
         input.setBackground(inputBg);
-
         LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
         inputParams.setMargins(0, dpToPx(6), 0, 0);
@@ -318,7 +320,6 @@ public class FloatingPenService extends Service {
         saveBg.setCornerRadius(dpToPx(12));
         saveBg.setColor(Color.parseColor("#D4A853"));
         saveBtn.setBackground(saveBg);
-
         LinearLayout.LayoutParams saveParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         saveParams.gravity = Gravity.END;
@@ -338,23 +339,27 @@ public class FloatingPenService extends Service {
     }
 
     private void saveNoteToApp(String category, String content) {
-        // Send to MainActivity's WebView via broadcast or directly
-        Intent intent = new Intent("com.marginalia.SAVE_NOTE");
-        intent.putExtra("category", category);
-        intent.putExtra("content", content);
-        sendBroadcast(intent);
-
-        // Also try to save via the WebView if activity is available
+        // Try to save via the WebView
         if (MarginaliaApp.activity != null) {
             MarginaliaApp.activity.runOnUiThread(() -> {
                 if (MarginaliaApp.activity.webView != null) {
+                    String escapedContent = content.replace("\\", "\\\\")
+                        .replace("'", "\\'")
+                        .replace("\n", "\\n")
+                        .replace("\r", "");
                     String js = String.format(
                         "document.dispatchEvent(new CustomEvent('android-save-note', {detail:{category:'%s',content:'%s'}}));",
-                        category, content.replace("'", "\\'").replace("\n", "\\n"));
+                        category, escapedContent);
                     MarginaliaApp.activity.webView.evaluateJavascript(js, null);
                 }
             });
         }
+
+        // Also broadcast in case activity isn't available
+        Intent intent = new Intent("com.marginalia.SAVE_NOTE");
+        intent.putExtra("category", category);
+        intent.putExtra("content", content);
+        sendBroadcast(intent);
     }
 
     private void togglePanel() {
@@ -368,6 +373,7 @@ public class FloatingPenService extends Service {
     private void openPanel() {
         if (!panelOpen) {
             try {
+                repositionPanel();
                 windowManager.addView(panelView, panelParams);
                 panelOpen = true;
             } catch (Exception e) {

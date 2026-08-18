@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:;" />
   <title>Marginalia</title>
+  <link rel="stylesheet" href="../assets/fa/css/all.min.css" />
   <link rel="stylesheet" href="library.css" />
 </head>
 <body>
@@ -26,27 +27,27 @@
         </div>
       </div>
 
-      <button id="btn-new-note" class="primary wide">+ New note</button>
-      <button id="btn-start-session" class="ghost wide">Start reading session</button>
+      <button id="btn-new-note" class="primary wide"><i class="fa-solid fa-plus" aria-hidden="true"></i> New note</button>
+      <button id="btn-start-session" class="ghost wide"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Start reading session</button>
 
       <nav id="nav">
         <button class="nav-item active" data-view="all">
-          <span class="nav-ico">⌂</span> All notes
+          <span class="nav-ico"><i class="fa-solid fa-house"></i></span> All notes
         </button>
         <button class="nav-item" data-view="review">
-          <span class="nav-ico">↺</span> Review
+          <span class="nav-ico"><i class="fa-solid fa-clock-rotate-left"></i></span> Review
         </button>
         <button class="nav-item" data-view="sessions">
-          <span class="nav-ico">▤</span> Reading sessions
+          <span class="nav-ico"><i class="fa-solid fa-book-open"></i></span> Reading sessions
         </button>
         <button class="nav-item" data-view="books">
-          <span class="nav-ico">▤</span> By book
+          <span class="nav-ico"><i class="fa-solid fa-book"></i></span> By book
         </button>
         <button class="nav-item" data-view="tags">
-          <span class="nav-ico">#</span> By tag
+          <span class="nav-ico"><i class="fa-solid fa-tags"></i></span> By tag
         </button>
         <button class="nav-item" data-view="settings">
-          <span class="nav-ico">⚙</span> Settings
+          <span class="nav-ico"><i class="fa-solid fa-gear"></i></span> Settings
         </button>
       </nav>
 
@@ -79,12 +80,12 @@
 
           <div id="editor" class="editor" hidden>
             <div class="editor-head">
-              <button id="btn-back" class="ghost small">← Back</button>
+              <button id="btn-back" class="ghost small"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</button>
               <select id="editor-category" title="Category"></select>
               <span id="save-status" class="save-status" aria-live="polite"></span>
               <div class="editor-actions">
                 <div id="export-wrap">
-                  <button id="btn-export-note" class="ghost small">Export ▾</button>
+                  <button id="btn-export-note" class="ghost small"><i class="fa-solid fa-download" aria-hidden="true"></i> Export <i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>
                   <div id="export-menu" class="menu" hidden>
                     <button data-format="txt">Plain text (.txt)</button>
                     <button data-format="md">Markdown (.md)</button>
@@ -147,7 +148,7 @@
       <div id="view-sessions" class="view" hidden>
         <div class="view-title">Reading sessions</div>
         <p class="view-sub">Start a session, read, and let every note you capture belong to it automatically.</p>
-        <button id="btn-start-session-2" class="primary">+ Start reading session</button>
+        <button id="btn-start-session-2" class="primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Start reading session</button>
         <div id="session-list" class="session-list"></div>
       </div>
 

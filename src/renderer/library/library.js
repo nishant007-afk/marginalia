@@ -602,7 +602,7 @@ async function renderBooks() {
     // showing notes of one book
     const back = document.createElement('button');
     back.className = 'ghost small';
-    back.textContent = '← All books';
+    back.innerHTML = '<i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All books';
     back.addEventListener('click', () => { state.booksSub = null; renderBooks(); });
     box.innerHTML = '';
     box.appendChild(back);
@@ -651,7 +651,7 @@ async function renderTags() {
   if (state.tagSub) {
     const back = document.createElement('button');
     back.className = 'ghost small';
-    back.textContent = '← All tags';
+    back.innerHTML = '<i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All tags';
     back.addEventListener('click', () => { state.tagSub = null; renderTags(); });
     box.innerHTML = '';
     box.appendChild(back);

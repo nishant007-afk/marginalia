@@ -135,7 +135,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    void startFloatingPen() {
+void startFloatingPen() {
+    try {
         Intent serviceIntent = new Intent(this, FloatingPenService.class);
         serviceIntent.setAction("START");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -143,13 +144,20 @@ public class MainActivity extends Activity {
         } else {
             startService(serviceIntent);
         }
+    } catch (Exception e) {
+        // Never let a pen service failure take the app down.
     }
+}
 
-    private void stopFloatingPen() {
-        Intent serviceIntent = new Intent(this, FloatingPenService.class);
-        serviceIntent.setAction("STOP");
-        startService(serviceIntent);
+private void stopFloatingPen() {
+    // Use stopService: unlike startService it has no background restriction,
+    // so this is safe even when the app is being torn down in the background.
+    try {
+        stopService(new Intent(this, FloatingPenService.class));
+    } catch (Exception ignored) {
+        // Already stopped or not running.
     }
+}
 
     class WebBridge {
         @JavascriptInterface

@@ -232,7 +232,6 @@ function loadPenPos() {
     pen.style.top = Math.max(4, Math.min(window.innerHeight-60, p.y))+'px';
     return;
   }} catch {}
-  // Default: bottom-left, above safe area
   pen.style.left = '12px';
   pen.style.top = Math.max(100, window.innerHeight - 140)+'px';
 }
@@ -280,7 +279,6 @@ async function renderReview() {
     card.onclick = () => openEditor(n.id); list.appendChild(card);
   }
 }
-// Init review chips
 (function(){
   const rf = $('#rf'); rf.innerHTML = '';
   [{r:'older',l:'Older than 30 days'},{r:'week',l:'This week'},{r:'month',l:'This month'}].forEach((item,i) => {
@@ -330,7 +328,7 @@ async function renderSettings() {
   }
 }
 window.showAuthModal = () => { $('#modal-auth').classList.add('show'); };
-window.closeModal = (id) => { $('#'+id).classList.remove('show'); };
+window.closeModal = (id) => { document.getElementById(id).classList.remove('show'); };
 window.doSignOut = async () => { await signOut(); renderSettings(); toast('Signed out'); };
 window.doSyncNow = async () => { if (!navigator.onLine) { toast('Offline. Will sync when connected.'); return; } toast('Syncing...'); await fullSync(); };
 
@@ -345,7 +343,9 @@ function initSupabase() {
 }
 async function signUp(email, password) {
   if (!sb) throw new Error('Sync not configured');
-  const { data, error } = await sb.auth.signUp({ email, password });
+  const { data, error } = await sb.auth.signUp({ email, password }, {
+    emailRedirectTo: window.location.origin + window.location.pathname
+  });
   if (error) throw error;
   currentUser = data.user;
   if (data.session) { currentUser = data.session.user; await fullSync(); }
@@ -372,25 +372,41 @@ $('#auth-toggle').addEventListener('click', () => {
   $('#auth-submit').textContent = authMode==='signin'?'Sign in':'Create account';
   $('#auth-toggle').textContent = authMode==='signin'?'Create account':'Sign in instead';
 });
+
 $('#auth-submit').addEventListener('click', async () => {
   const email=$('#auth-email').value.trim(), pass=$('#auth-pass').value;
   if (!email||!pass) { toast('Enter email and password'); return; }
   try {
-    if (authMode==='signin') { await signIn(email,pass); toast('Signed in'); }
-    else {
+    if (authMode==='signin') {
+      await signIn(email,pass);
+      toast('Signed in');
+      closeModal('modal-auth'); renderSettings();
+    } else {
       const r = await signUp(email,pass);
-      if (!r.session) toast('Check your email to confirm, then sign in.');
-      else toast('Account created and signed in');
+      if (!r.session) {
+        toast('Account created! Check your email to confirm.');
+        closeModal('modal-auth');
+      } else {
+        toast('Account created and signed in');
+        closeModal('modal-auth'); renderSettings();
+      }
     }
-    closeModal('modal-auth'); renderSettings();
-  } catch (e) { toast(e.message||'Auth failed'); }
+  } catch (e) {
+    let msg = e.message || 'Auth failed';
+    if (msg.includes('already registered')) msg = 'This email is already registered. Try signing in.';
+    else if (msg.includes('Invalid login')) msg = 'Wrong email or password.';
+    else if (msg.includes('Email not confirmed')) msg = 'Email not confirmed. Check your inbox.';
+    else if (msg.includes('over_email_send')) msg = 'Too many attempts. Wait a minute and try again.';
+    toast(msg);
+  }
 });
+
 // Password eye toggle
 $('#auth-eye').addEventListener('click', () => {
-  const input = $('#auth-pass');
+  const input = document.getElementById('auth-pass');
   const isPassword = input.type === 'password';
   input.type = isPassword ? 'text' : 'password';
-  $('#auth-eye').innerHTML = isPassword ? '&#128064;' : '&#128065;';
+  document.getElementById('auth-eye').innerHTML = isPassword ? '&#128064;' : '&#128065;';
 });
 
 /* ============================================================ SYNC */
@@ -437,7 +453,7 @@ async function fullSync() {
   } catch(e) { console.error('Sync failed:',e); }
 }
 function updateSyncDot() {
-  const dot=$('#sync-dot'); const label=$('#sync-label');
+  const dot=document.getElementById('sync-dot'); const label=document.getElementById('sync-label');
   if (!currentUser) { dot.className='sync-dot'; label.textContent=''; return; }
   if (navigator.onLine) { dot.className='sync-dot online'; label.textContent='online'; }
   else { dot.className='sync-dot'; label.textContent='offline'; }
@@ -472,11 +488,11 @@ $('#set-restore').addEventListener('click', () => {
 
 /* ============================================================ INSTALL */
 (function(){
-  const bar=$('#install-bar'),btn=$('#btn-install');if(!bar)return;
+  const bar=document.getElementById('install-bar'),btn=document.getElementById('btn-install');if(!bar)return;
   if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;
   let dp=null;
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#install-text').textContent='Add Marginalia to your home screen';bar.hidden=false;});
-  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!navigator.standalone){$('#install-text').textContent='Tap Share > Add to Home Screen';btn.hidden=true;bar.hidden=false;}
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('install-text').textContent='Add Marginalia to your home screen';bar.hidden=false;});
+  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!navigator.standalone){document.getElementById('install-text').textContent='Tap Share > Add to Home Screen';btn.hidden=true;bar.hidden=false;}
   btn.addEventListener('click',()=>{if(dp){dp.prompt();dp.userChoice.then(()=>{bar.hidden=true;});}});
   window.addEventListener('appinstalled',()=>{bar.hidden=true});
 })();
@@ -488,7 +504,7 @@ $('#set-restore').addEventListener('click', () => {
     if (res.ok) {
       const { version } = await res.json();
       if (version && version !== APP_VERSION) {
-        const bar = $('#update-bar');
+        const bar = document.getElementById('update-bar');
         if (bar) { bar.classList.add('show'); bar.querySelector('span').textContent = 'New version available (v'+version+')'; }
       }
     }

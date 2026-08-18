@@ -141,6 +141,7 @@
   <div id="topbar">
     <button class="tb" id="btn-menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
     <span class="tb-brand">Marginalia</span>
+    <span id="sync-dot" style="font-size:10px;color:var(--ft);margin-right:4px">offline</span>
     <button class="tb" id="btn-new" aria-label="New note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   </div>
 
@@ -275,6 +276,8 @@
 
   <!-- floating pen -->
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="store.js"></script>
   <script src="app.js"></script>
   <script src="install.js"></script>

@@ -8,6 +8,13 @@
   const text = document.getElementById('install-text');
   if (!bar) return;
 
+  // Inside the native Android app the app is already installed — never show
+  // the "install to home screen" banner there.
+  if (window.AndroidBridge) {
+    bar.hidden = true;
+    return;
+  }
+
   function isStandalone() {
     return (
       window.matchMedia('(display-mode: standalone)').matches ||

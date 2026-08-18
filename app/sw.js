@@ -1,9 +1,13 @@
-const CACHE = 'marginalia-v7';
+const CACHE = 'marginalia-v8';
 const STATIC_ASSETS = [
   './', './index.html', './app.js', './store.js',
   './manifest.webmanifest', './favicon.png',
   './icon-192.png', './icon-512.png',
-  './install.js', './supabase-config.js'
+  './install.js', './supabase-config.js',
+  '../assets/fa/css/all.min.css',
+  '../assets/fa/webfonts/fa-solid-900.woff2',
+  '../assets/fa/webfonts/fa-regular-400.woff2',
+  '../assets/fa/webfonts/fa-brands-400.woff2'
 ];
 
 /* --- Install --- */
@@ -39,8 +43,8 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // version.json: always network-first
-  if (url.pathname.endsWith('version.json')) {
+  // version.json / update.json: always network-first
+  if (url.pathname.endsWith('version.json') || url.pathname.endsWith('update.json')) {
     e.respondWith(
       fetch(e.request, { cache: 'no-store' })
         .catch(() => caches.match(e.request))

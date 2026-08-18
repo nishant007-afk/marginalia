@@ -2,14 +2,14 @@
 
 /* ================================================================ CONFIG */
 const CATEGORIES = {
-  observe:{label:'Observe',icon:'&#128065;',prompt:'What did you notice?'},
-  image:{label:'Images',icon:'&#127912;',prompt:'What image stayed with you?'},
-  connection:{label:'Connections',icon:'&#128279;',prompt:'What does this remind you of?'},
-  feeling:{label:'Feelings',icon:'&#10084;',prompt:'What did this make you feel?'},
-  idea:{label:'Ideas',icon:'&#128161;',prompt:'What thought came to you?'},
-  line:{label:'Lines',icon:'&#9998;',prompt:'A line of your own?'},
-  draft:{label:'Drafts',icon:'&#128221;',prompt:'Write a little.'},
-  poem:{label:'Poems',icon:'&#127925;',prompt:'A finished piece.'}
+  observe:{label:'Observe',icon:'<i class="fa-solid fa-eye" aria-hidden="true"></i>',prompt:'What did you notice?'},
+  image:{label:'Images',icon:'<i class="fa-solid fa-palette" aria-hidden="true"></i>',prompt:'What image stayed with you?'},
+  connection:{label:'Connections',icon:'<i class="fa-solid fa-link" aria-hidden="true"></i>',prompt:'What does this remind you of?'},
+  feeling:{label:'Feelings',icon:'<i class="fa-solid fa-heart" aria-hidden="true"></i>',prompt:'What did this make you feel?'},
+  idea:{label:'Ideas',icon:'<i class="fa-solid fa-lightbulb" aria-hidden="true"></i>',prompt:'What thought came to you?'},
+  line:{label:'Lines',icon:'<i class="fa-solid fa-pen" aria-hidden="true"></i>',prompt:'A line of your own?'},
+  draft:{label:'Drafts',icon:'<i class="fa-solid fa-note-sticky" aria-hidden="true"></i>',prompt:'Write a little.'},
+  poem:{label:'Poems',icon:'<i class="fa-solid fa-feather" aria-hidden="true"></i>',prompt:'A finished piece.'}
 };
 const APP_VERSION = '1.4.0';
 
@@ -316,6 +316,7 @@ $('#ms-start').addEventListener('click', async () => {
 
 /* ============================================================ SETTINGS */
 async function renderSettings() {
+  renderSyncSettings();
   const authEl = $('#auth-section');
   if (currentUser) {
     authEl.innerHTML = '<div style="font-size:13px;margin-bottom:8px">Signed in as <strong>'+esc(currentUser.email)+'</strong></div>'+
@@ -332,27 +333,91 @@ window.closeModal = (id) => { document.getElementById(id).classList.remove('show
 window.doSignOut = async () => { await signOut(); renderSettings(); toast('Signed out'); };
 window.doSyncNow = async () => { if (!navigator.onLine) { toast('Offline. Will sync when connected.'); return; } toast('Syncing...'); await fullSync(); };
 
+/* ---- Sync server credentials ---- */
+function renderSyncSettings() {
+  const cfg = getSupabaseConfig();
+  $('#sync-url').value = cfg.url || '';
+  $('#sync-key').value = cfg.key || '';
+  $('#sync-status').textContent = (sb && currentUser) ? 'Connected as ' + esc(currentUser.email)
+    : (sb ? 'Connection configured. Sign in to enable sync.' : 'Supabase library not loaded. Check your internet connection.');
+}
+$('#sync-save').addEventListener('click', () => {
+  const url = $('#sync-url').value.trim();
+  const key = $('#sync-key').value.trim();
+  if (!url || !key) { toast('Enter both the Supabase URL and anon key'); return; }
+  localStorage.setItem(SYNC_CREDS_KEY, JSON.stringify({ url, key }));
+  initSupabase();
+  currentUser = null;
+  renderSettings();
+  renderSyncSettings();
+  toast('Credentials saved');
+});
+$('#sync-test').addEventListener('click', async () => {
+  const url = $('#sync-url').value.trim();
+  const key = $('#sync-key').value.trim();
+  if (!url || !key) { toast('Enter both the Supabase URL and anon key'); return; }
+  localStorage.setItem(SYNC_CREDS_KEY, JSON.stringify({ url, key }));
+  initSupabase();
+  if (!sb) { $('#sync-status').textContent = 'Could not create the Supabase client.'; return; }
+  $('#sync-status').textContent = 'Testing …';
+  try {
+    const { error } = await sb.auth.getSession();
+    if (error) throw error;
+    const { error: probe } = await sb.from('notes').select('id').limit(1);
+    if (probe) throw probe;
+    $('#sync-status').textContent = 'Connection OK. Tables exist and are reachable.';
+  } catch (e) {
+    $('#sync-status').textContent = 'Connected to Supabase but the notes/sessions tables or RLS are missing. Run supabase/schema.sql in the SQL editor, then try again.';
+  }
+});
+
 /* ============================================================ AUTH */
 let sb = null, currentUser = null;
+
+const SYNC_CREDS_KEY = 'marginalia-sync-creds';
+
+function getStoredCreds() {
+  try {
+    const v = JSON.parse(localStorage.getItem(SYNC_CREDS_KEY) || 'null');
+    return (v && typeof v.url === 'string' && v.url && typeof v.key === 'string' && v.key) ? v : null;
+  } catch (e) { return null; }
+}
+
+function getSupabaseConfig() {
+  const stored = getStoredCreds();
+  return {
+    url: stored ? stored.url : window.SUPABASE_URL,
+    key: stored ? stored.key : window.SUPABASE_ANON
+  };
+}
+
 function initSupabase() {
-  if (window.SUPABASE_URL && window.SUPABASE_ANON && window.supabase) {
-    try { sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON); return true; }
-    catch(e) { console.error('Supabase init failed:', e); return false; }
+  const cfg = getSupabaseConfig();
+  if (cfg.url && cfg.key && window.supabase) {
+    try {
+      sb = window.supabase.createClient(cfg.url, cfg.key);
+      return true;
+    } catch (e) {
+      console.error('Supabase init failed:', e);
+      sb = null;
+      return false;
+    }
   }
+  sb = null;
   return false;
 }
 async function signUp(email, password) {
-  if (!sb) throw new Error('Sync not configured');
+  if (!sb) throw new Error('Sync is not configured. Add your Supabase credentials in Settings.');
   const { data, error } = await sb.auth.signUp({ email, password }, {
     emailRedirectTo: window.location.origin + window.location.pathname
   });
   if (error) throw error;
-  currentUser = data.user;
-  if (data.session) { currentUser = data.session.user; await fullSync(); }
+  currentUser = data.session ? data.session.user : (data.user || null);
+  if (data.session) await fullSync();
   return data;
 }
 async function signIn(email, password) {
-  if (!sb) throw new Error('Sync not configured');
+  if (!sb) throw new Error('Sync is not configured. Add your Supabase credentials in Settings.');
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
   if (error) throw error;
   currentUser = data.user; await fullSync(); return data;
@@ -360,7 +425,7 @@ async function signIn(email, password) {
 async function signOut() { if (sb) await sb.auth.signOut(); currentUser = null; }
 async function getSessionUser() {
   if (!sb) return null;
-  try { const { data } = await sb.auth.getSession(); currentUser = data.session?.user || null; } catch {}
+  try { const { data } = await sb.auth.getSession(); currentUser = data.session?.user || null; } catch (e) { console.error('getSession failed:', e); }
   return currentUser;
 }
 
@@ -406,7 +471,10 @@ $('#auth-eye').addEventListener('click', () => {
   const input = document.getElementById('auth-pass');
   const isPassword = input.type === 'password';
   input.type = isPassword ? 'text' : 'password';
-  document.getElementById('auth-eye').innerHTML = isPassword ? '&#128064;' : '&#128065;';
+  const eye = document.querySelector('#auth-eye i');
+  if (eye) {
+    eye.className = isPassword ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+  }
 });
 
 /* ============================================================ SYNC */
@@ -421,18 +489,20 @@ async function flushSyncQueue() {
     try {
       if (item.action==='upsert') await sb.from(item.table).upsert({...item.data,user_id:currentUser.id});
       else if (item.action==='delete') await sb.from(item.table).delete().eq('id',item.id).eq('user_id',currentUser.id);
-    } catch { rem.push(item); }
+    } catch (e) { console.error('Sync queue item failed:', e); rem.push(item); }
   }
   await setPendingSync(rem);
   if (rem.length===0) toast('Synced to cloud');
+  else toast('Some changes are waiting — will retry when connected');
 }
 async function fullSync() {
   if (!sb||!currentUser) return;
+  let failures = 0;
   try {
-    const {data:rn, err:e1} = await sb.from('notes').select('*').eq('user_id',currentUser.id);
-    const {data:rs, err:e2} = await sb.from('sessions').select('*').eq('user_id',currentUser.id);
-    if (e1) console.error('Sync notes fetch error:', e1);
-    if (e2) console.error('Sync sessions fetch error:', e2);
+    const {data:rn, error:e1} = await sb.from('notes').select('*').eq('user_id',currentUser.id);
+    const {data:rs, error:e2} = await sb.from('sessions').select('*').eq('user_id',currentUser.id);
+    if (e1) { console.error('Sync notes fetch error:', e1.message); failures++; }
+    if (e2) { console.error('Sync sessions fetch error:', e2.message); failures++; }
     if (rn) for (const n of rn) {
       const local=await store.getNote(n.id);
       if (!local||new Date(n.updated_at)>new Date(local.updatedAt)) {
@@ -441,16 +511,29 @@ async function fullSync() {
     }
     if (rs) for (const s of rs) {
       const local=await store.getSession(s.id);
-      if (!local||!local.session||new Date(s.updated_at)>new Date(local.session.updatedAt)) {
+      if (!local||local.session.updatedAt==null||new Date(s.updated_at)>new Date(local.session.updatedAt)) {
         await store.updateSession(s.id,{book:s.book,author:s.author,chapter:s.chapter,pageRange:s.page_range,startedAt:s.started_at,endedAt:s.ended_at,createdAt:s.created_at,updatedAt:s.updated_at}).catch(()=>{});
       }
     }
     const ln=await store.listNotes({});
-    for (const n of ln) await sb.from('notes').upsert({id:n.id,user_id:currentUser.id,category:n.category,title:n.title,content:n.content,book:n.book,author:n.author,page:n.page,source_text:n.sourceText,tags:n.tags||[],session_id:n.sessionId,links:n.links||[],created_at:n.createdAt,updated_at:n.updatedAt},{onConflict:'id'}).catch(()=>{});
+    for (const n of ln) {
+      try {
+        await sb.from('notes').upsert({id:n.id,user_id:currentUser.id,category:n.category,title:n.title,content:n.content,book:n.book,author:n.author,page:n.page,source_text:n.sourceText,tags:n.tags||[],session_id:n.sessionId,links:n.links||[],created_at:n.createdAt,updated_at:n.updatedAt},{onConflict:'id'});
+      } catch (e) { console.error('Note upsert failed:', e); failures++; }
+    }
     const ls=await store.listSessions();
-    for (const s of ls) await sb.from('sessions').upsert({id:s.id,user_id:currentUser.id,book:s.book,author:s.author,chapter:s.chapter,page_range:s.pageRange,started_at:s.startedAt,ended_at:s.endedAt,created_at:s.createdAt,updated_at:s.updatedAt},{onConflict:'id'}).catch(()=>{});
-    await flushSyncQueue(); renderList(); toast('Synced with cloud');
-  } catch(e) { console.error('Sync failed:',e); }
+    for (const s of ls) {
+      try {
+        await sb.from('sessions').upsert({id:s.id,user_id:currentUser.id,book:s.book,author:s.author,chapter:s.chapter,page_range:s.pageRange,started_at:s.startedAt,ended_at:s.endedAt,created_at:s.createdAt,updated_at:s.updatedAt},{onConflict:'id'});
+      } catch (e) { console.error('Session upsert failed:', e); failures++; }
+    }
+    await flushSyncQueue(); renderList();
+    if (failures) {
+      toast('Synced with errors. Make sure the notes/sessions tables exist with RLS (supabase/schema.sql).');
+    } else {
+      toast('Synced with cloud');
+    }
+  } catch(e) { console.error('Sync failed:',e); toast('Sync failed: '+(e.message||'unknown error')); }
 }
 function updateSyncDot() {
   const dot=document.getElementById('sync-dot'); const label=document.getElementById('sync-label');
@@ -497,8 +580,64 @@ $('#set-restore').addEventListener('click', () => {
   window.addEventListener('appinstalled',()=>{bar.hidden=true});
 })();
 
+/* ============================================================ ANDROID APP UPDATE */
+let apkUpdate = null;
+
+async function checkApkUpdate() {
+  if (!window.AndroidBridge) return false;
+  try {
+    const base = location.href.replace(/\/app\/.*$/, '/');
+    const res = await fetch(base + 'update.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return false;
+    const meta = await res.json();
+    const installed = (window.AndroidBridge.getAppVersion) ? window.AndroidBridge.getAppVersion() : 0;
+    if (!(meta && meta.versionCode && installed && meta.versionCode > installed)) return false;
+    const laterFor = parseInt(localStorage.getItem('upd-later-v') || '0', 10);
+    if (laterFor >= meta.versionCode) return false;
+    apkUpdate = { meta, url: base + (meta.apkUrl || 'Marginalia.apk') };
+    showApkUpdateModal();
+    return true;
+  } catch (e) { console.log('APK update check failed:', e); }
+  return false;
+}
+
+function showApkUpdateModal() {
+  if (!apkUpdate) return;
+  $('#upd-ver').textContent = apkUpdate.meta.versionName ? (' v' + apkUpdate.meta.versionName) : (' v' + apkUpdate.meta.versionCode);
+  const ul = $('#upd-notes'); ul.innerHTML = '';
+  const notes = (apkUpdate.meta.notes && apkUpdate.meta.notes.length) ? apkUpdate.meta.notes : ['General improvements and bug fixes.'];
+  for (const line of notes) {
+    const li = document.createElement('li');
+    li.textContent = line;
+    ul.appendChild(li);
+  }
+  $('#modal-update').classList.add('show');
+}
+
+$('#upd-later').addEventListener('click', () => {
+  if (apkUpdate) localStorage.setItem('upd-later-v', String(apkUpdate.meta.versionCode));
+  $('#modal-update').classList.remove('show');
+});
+$('#upd-now').addEventListener('click', () => {
+  if (!apkUpdate) return;
+  if (window.AndroidBridge && window.AndroidBridge.updateApp) {
+    window.AndroidBridge.updateApp(apkUpdate.url);
+    toast('Downloading update…');
+  } else {
+    const a = document.createElement('a');
+    a.href = apkUpdate.url;
+    a.download = 'Marginalia.apk';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('Download started — open the file to install');
+  }
+  $('#modal-update').classList.remove('show');
+});
+
 /* ============================================================ UPDATE CHECK */
 function showUpdateBar(version) {
+  if (apkUpdate) return;
   const bar = document.getElementById('update-bar');
   if (bar) {
     bar.classList.add('show');
@@ -524,12 +663,15 @@ async function checkForUpdates() {
 
 // Check on load
 checkForUpdates();
+checkApkUpdate();
 // Check every time user comes back to the tab
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) checkForUpdates();
+  if (!document.hidden) { checkForUpdates(); checkApkUpdate(); }
 });
 // Check every 3 minutes
 setInterval(checkForUpdates, 3*60*1000);
+// Check for APK updates less often (30 minutes)
+setInterval(checkApkUpdate, 30*60*1000);
 
 // Settings button
 const checkBtn = document.getElementById('set-check-update');
@@ -578,6 +720,7 @@ document.addEventListener('android-save-note', async (e) => {
 
 /* ============================================================ INIT */
 (async function boot() {
+  if (window.AndroidBridge) document.body.classList.add('android');
   initSupabase(); await initStore(); await getSessionUser();
   renderList(); state.activeSession = await store.getActiveSession();
   updateSyncDot();

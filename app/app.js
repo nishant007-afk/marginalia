@@ -11,7 +11,7 @@ const CATEGORIES = {
   draft:{label:'Drafts',icon:'&#128221;',prompt:'Write a little.'},
   poem:{label:'Poems',icon:'&#127925;',prompt:'A finished piece.'}
 };
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 /* ================================================================ STORE */
 const { Store } = window.MarginaliaStore || {};
@@ -498,48 +498,73 @@ $('#set-restore').addEventListener('click', () => {
 })();
 
 /* ============================================================ UPDATE CHECK */
-let latestVersion = null;
+function showUpdateBar(version) {
+  const bar = document.getElementById('update-bar');
+  if (bar) {
+    bar.classList.add('show');
+    bar.querySelector('span').textContent = version
+      ? 'New version available (v'+version+'). Tap Restart to update.'
+      : 'A new version is available. Tap Restart to update.';
+  }
+}
+
 async function checkForUpdates() {
   try {
     const res = await fetch('./version.json?t='+Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const { version } = await res.json();
-      latestVersion = version;
       if (version && version !== APP_VERSION) {
-        const bar = document.getElementById('update-bar');
-        if (bar) {
-          bar.classList.add('show');
-          bar.querySelector('span').textContent = 'New version available (v'+version+'). Tap Restart to update.';
-        }
+        showUpdateBar(version);
+        return true;
       }
     }
   } catch (e) { console.log('Update check failed:', e); }
+  return false;
 }
+
 // Check on load
 checkForUpdates();
 // Check every time user comes back to the tab
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) checkForUpdates();
 });
-// Check every 5 minutes
-setInterval(checkForUpdates, 5*60*1000);
+// Check every 3 minutes
+setInterval(checkForUpdates, 3*60*1000);
+
 // Settings button
 const checkBtn = document.getElementById('set-check-update');
 if (checkBtn) checkBtn.addEventListener('click', async () => {
   toast('Checking for updates...');
-  await checkForUpdates();
-  if (latestVersion && latestVersion !== APP_VERSION) {
-    toast('Update found: v'+latestVersion+'. Restart to apply.');
-  } else {
-    toast('App is up to date (v'+APP_VERSION+')');
-  }
+  const found = await checkForUpdates();
+  if (!found) toast('App is up to date (v'+APP_VERSION+')');
 });
 
 /* ============================================================ SERVICE WORKER */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(reg => {
-  // Check for service worker updates every minute
-  setInterval(() => reg.update().catch(()=>{}), 60*1000);
-});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    // Listen for SW update messages
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'SW_UPDATED') {
+        showUpdateBar();
+      }
+    });
+    // Check for SW updates every 30 seconds
+    setInterval(() => {
+      reg.update().then(() => {
+        if (reg.waiting) {
+          // New SW is waiting, tell it to skip waiting
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      }).catch(()=>{});
+    }, 30*1000);
+  });
+
+  // Listen for controllerchange (new SW took over)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // New SW is now active, reload to get fresh content
+    window.location.reload();
+  });
+}
 
 /* ============================================================ INIT */
 (async function boot() {

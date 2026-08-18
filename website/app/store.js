@@ -90,6 +90,7 @@ function normalizeNote(raw) {
     book: cleanString(r.book, 500),
     author: cleanString(r.author, 500),
     page: cleanString(r.page, 200),
+    sourceText: cleanString(r.sourceText, 500),
     date: cleanString(r.date, 200),
     tags: cleanTags(r.tags),
     sessionId: typeof r.sessionId === 'string' && r.sessionId ? r.sessionId : null,

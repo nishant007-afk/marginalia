@@ -29,7 +29,7 @@
     .f{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px}
     .f h3{font-size:14px;color:var(--ac);margin-bottom:4px}
     .f p{font-size:13px;color:var(--mt)}
-    .qr-section{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:28px;text-align:center;margin-bottom:36px}
+    .qr-section{background:var(--bg2);border:1px solid var(--ac);border-radius:14px;padding:28px;text-align:center;margin-bottom:36px;transition:border-color .3s,box-shadow .3s}
     .qr-section h2{font-size:18px;margin-bottom:8px}
     .qr-row{display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:16px}
     .qr-box{background:#f4eddd;border-radius:12px;padding:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
@@ -40,6 +40,8 @@
     #qr-url{width:100%;margin-top:10px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--tx);outline:none}
     #qr-url:focus{border-color:rgba(201,168,106,.4)}
     #qr-url::placeholder{color:var(--ft)}
+    .qr-highlight{animation:glow 1.5s ease-in-out 2}
+    @keyframes glow{0%,100%{border-color:var(--ac);box-shadow:none}50%{border-color:var(--ac);box-shadow:0 0 20px rgba(201,168,106,.3)}}
     footer{text-align:center;padding:40px 0;color:var(--ft);font-size:12px}
   </style>
 </head>
@@ -53,7 +55,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download for Windows
         </a>
-        <a class="btn btn-g" href="app/index.html">
+        <a class="btn btn-g" href="#qr-section" onclick="document.getElementById('qr-section').scrollIntoView({behavior:'smooth'});return false;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
           Get it on your phone
         </a>
@@ -77,7 +79,7 @@
 
     <hr/>
 
-    <div class="qr-section">
+    <div class="qr-section" id="qr-section">
       <h2>Install on your phone</h2>
       <div class="qr-row">
         <div class="qr-box" id="qr-code"></div>
@@ -94,5 +96,14 @@
 
   <script src="qrcode.js"></script>
   <script src="qr.js"></script>
+  <script>
+    // When "Get it on your phone" is clicked, highlight the QR section
+    document.querySelector('[href="#qr-section"]').addEventListener('click', function() {
+      var qs = document.getElementById('qr-section');
+      qs.classList.remove('qr-highlight');
+      void qs.offsetWidth;
+      qs.classList.add('qr-highlight');
+    });
+  </script>
 </body>
 </html>

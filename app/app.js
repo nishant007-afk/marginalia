@@ -498,22 +498,48 @@ $('#set-restore').addEventListener('click', () => {
 })();
 
 /* ============================================================ UPDATE CHECK */
-(async function checkForUpdates() {
+let latestVersion = null;
+async function checkForUpdates() {
   try {
-    const res = await fetch('./version.json?t='+Date.now());
+    const res = await fetch('./version.json?t='+Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const { version } = await res.json();
+      latestVersion = version;
       if (version && version !== APP_VERSION) {
         const bar = document.getElementById('update-bar');
-        if (bar) { bar.classList.add('show'); bar.querySelector('span').textContent = 'New version available (v'+version+')'; }
+        if (bar) {
+          bar.classList.add('show');
+          bar.querySelector('span').textContent = 'New version available (v'+version+'). Tap Restart to update.';
+        }
       }
     }
-  } catch {}
-  localStorage.setItem('marginalia-version', APP_VERSION);
-})();
+  } catch (e) { console.log('Update check failed:', e); }
+}
+// Check on load
+checkForUpdates();
+// Check every time user comes back to the tab
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) checkForUpdates();
+});
+// Check every 5 minutes
+setInterval(checkForUpdates, 5*60*1000);
+// Settings button
+const checkBtn = document.getElementById('set-check-update');
+if (checkBtn) checkBtn.addEventListener('click', async () => {
+  toast('Checking for updates...');
+  await checkForUpdates();
+  if (latestVersion && latestVersion !== APP_VERSION) {
+    toast('Update found: v'+latestVersion+'. Restart to apply.');
+  } else {
+    toast('App is up to date (v'+APP_VERSION+')');
+  }
+});
 
 /* ============================================================ SERVICE WORKER */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(reg => {
+  // Check for service worker updates every minute
+  setInterval(() => reg.update().catch(()=>{}), 60*1000);
+});
 
 /* ============================================================ INIT */
 (async function boot() {

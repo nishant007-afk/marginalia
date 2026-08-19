@@ -175,9 +175,11 @@ function renderChips() {
   };
   add('all','All');
   for (const [k,c] of Object.entries(CATEGORIES)) add(k,c.label);
+  updateChipsMore();
 }
 async function renderList() {
   renderChips();
+  renderActiveBanner();
   const list = $('#list');
   const notes = await store.listNotes({ category: state.catFilter==='all'?undefined:state.catFilter, query: state.search||undefined });
   list.innerHTML = '';
@@ -336,14 +338,51 @@ $('#rv-btn').addEventListener('click', async () => {
 $('#rv-open').addEventListener('click', () => { if(revisitNote)openEditor(revisitNote.id); });
 
 /* ============================================================ SESSIONS */
+function sessionBtn(label, cls, fn) {
+  const b = document.createElement('button');
+  b.className = cls;
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  return b;
+}
+
 async function renderSessions() {
   const sessions = await store.listSessions(); const list=$('#sl'); list.innerHTML='';
-  if (!sessions.length) { list.innerHTML='<div class="empty">No sessions yet.</div>'; return; }
+  if (!sessions.length) {
+    list.innerHTML='<div class="empty">No sessions yet. Tap "Start session" and every note you write while it is active will attach to it.</div>';
+    return;
+  }
   for (const s of sessions) {
     const {notes} = await store.getSession(s.id);
     const item = document.createElement('div'); item.className='card'; item.style.marginBottom='8px';
     const status = s.endedAt ? 'ended' : 'ongoing';
     item.innerHTML = '<div class="card-top"><span class="ct">'+esc(s.book||'Reading session')+'</span>'+(s.author?'<span class="cc">'+esc(s.author)+'</span>':'')+'</div><div class="cm">'+fmtDate(s.startedAt)+' / '+status+' / '+notes.length+' note'+(notes.length===1?'':'s')+'</div>';
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap';
+    const isActive = state.activeSession && state.activeSession.id === s.id;
+    if (isActive) {
+      actions.appendChild(sessionBtn('End session', 'btn btn-p btn-sm', async () => {
+        await store.endSession(s.id);
+        await refreshActiveState();
+        renderSessions();
+        toast('Session ended');
+      }));
+    } else if (!s.endedAt) {
+      actions.appendChild(sessionBtn('Resume', 'btn btn-g btn-sm', async () => {
+        await store.resumeSession(s.id);
+        await refreshActiveState();
+        renderSessions();
+        toast('Session resumed. New notes will attach to it.');
+      }));
+    }
+    if (s.endedAt) {
+      actions.appendChild(sessionBtn('Delete', 'btn btn-g btn-sm', async () => {
+        await store.deleteSession(s.id);
+        renderSessions();
+        toast('Session deleted (its notes were kept)');
+      }));
+    }
+    if (actions.children.length) item.appendChild(actions);
     list.appendChild(item);
   }
 }
@@ -351,14 +390,14 @@ $('#s-new').addEventListener('click', () => $('#modal-session').classList.add('s
 $('#ms-start').addEventListener('click', async () => {
   const book=$('#ms-book').value.trim(), author=$('#ms-author').value.trim();
   await store.createSession({book,author}); closeModal('modal-session');
-  state.activeSession=await store.getActiveSession(); toast('Session started'); renderSessions();
+  await refreshActiveState(); toast('Session started'); renderSessions(); renderList();
 });
 
 /* ============================================================ SETTINGS */
 async function renderSettings() {
-  renderSyncSettings();
-  renderAndroidVersionLine();
+  renderAppVersion();
   renderPenToggle();
+  renderTopbarAuth();
   const authEl = $('#auth-section');
   if (currentUser) {
     authEl.innerHTML = '<div style="font-size:13px;margin-bottom:8px">Signed in as <strong>'+esc(currentUser.email)+'</strong></div>'+
@@ -372,46 +411,67 @@ async function renderSettings() {
 }
 window.showAuthModal = () => { $('#modal-auth').classList.add('show'); updateBackButton(); };
 window.closeModal = (id) => { document.getElementById(id).classList.remove('show'); updateBackButton(); };
-window.doSignOut = async () => { await signOut(); renderSettings(); toast('Signed out'); };
+window.doSignOut = async () => { await signOut(); renderSettings(); renderTopbarAuth(); toast('Signed out'); };
 window.doSyncNow = async () => { if (!navigator.onLine) { toast('Offline. Will sync when connected.'); return; } toast('Syncing...'); await fullSync(); };
 
-/* ---- Sync server credentials ---- */
-function renderSyncSettings() {
-  const cfg = getSupabaseConfig();
-  $('#sync-url').value = cfg.url || '';
-  $('#sync-key').value = cfg.key || '';
-  $('#sync-status').textContent = (sb && currentUser) ? 'Connected as ' + esc(currentUser.email)
-    : (sb ? 'Connection configured. Sign in to enable sync.' : 'Supabase library not loaded. Check your internet connection.');
-}
-$('#sync-save').addEventListener('click', () => {
-  const url = $('#sync-url').value.trim();
-  const key = $('#sync-key').value.trim();
-  if (!url || !key) { toast('Enter both the Supabase URL and anon key'); return; }
-  localStorage.setItem(SYNC_CREDS_KEY, JSON.stringify({ url, key }));
-  initSupabase();
-  currentUser = null;
-  renderSettings();
-  renderSyncSettings();
-  toast('Credentials saved');
-});
-$('#sync-test').addEventListener('click', async () => {
-  const url = $('#sync-url').value.trim();
-  const key = $('#sync-key').value.trim();
-  if (!url || !key) { toast('Enter both the Supabase URL and anon key'); return; }
-  localStorage.setItem(SYNC_CREDS_KEY, JSON.stringify({ url, key }));
-  initSupabase();
-  if (!sb) { $('#sync-status').textContent = 'Could not create the Supabase client.'; return; }
-  $('#sync-status').textContent = 'Testing …';
-  try {
-    const { error } = await sb.auth.getSession();
-    if (error) throw error;
-    const { error: probe } = await sb.from('notes').select('id').limit(1);
-    if (probe) throw probe;
-    $('#sync-status').textContent = 'Connection OK. Tables exist and are reachable.';
-  } catch (e) {
-    $('#sync-status').textContent = 'Connected to Supabase but the notes/sessions tables or RLS are missing. Run supabase/schema.sql in the SQL editor, then try again.';
+/* ---- Account button on the top bar ---- */
+function renderTopbarAuth() {
+  const el = $('#tb-account');
+  if (!el) return;
+  el.onclick = null;
+  if (currentUser) {
+    const meta = currentUser.user_metadata || {};
+    const avatar = meta.avatar_url || meta.picture || '';
+    if (avatar) {
+      el.innerHTML = '<img class="tb-pic" src="' + esc(avatar) + '" alt="" onerror="this.style.display=\'none\'">';
+      el.onclick = () => switchView('settings');
+    } else {
+      const initial = (currentUser.email || '?').charAt(0).toUpperCase();
+      el.innerHTML = '<span class="tb-avatar">' + esc(initial) + '</span>';
+      el.onclick = () => switchView('settings');
+    }
+  } else {
+    el.innerHTML = '<span class="tb-signin">Sign in</span>';
+    el.onclick = () => showAuthModal();
   }
-});
+}
+
+/* ---- Active reading session banner + helpers ---- */
+async function refreshActiveState() {
+  state.activeSession = await store.getActiveSession();
+  renderActiveBanner();
+}
+
+function renderActiveBanner() {
+  const b = $('#active-banner');
+  if (!b) return;
+  if (state.activeSession) {
+    const book = state.activeSession.book || 'a session';
+    b.innerHTML = '<span class="ab-book"><i class="fa-solid fa-book-open" aria-hidden="true"></i>&nbsp; Reading: ' + esc(book) + '</span><button class="ab-end">End session</button>';
+    b.hidden = false;
+    b.querySelector('.ab-end').addEventListener('click', async () => {
+      if (!state.activeSession) return;
+      await store.endSession(state.activeSession.id);
+      await refreshActiveState();
+      toast('Session ended');
+      if (state.view === 'sessions') renderSessions();
+      renderList();
+    });
+  } else {
+    b.hidden = true;
+  }
+}
+
+/* ---- "More categories" hint on the chips row ---- */
+const listChips = document.getElementById('chips');
+const chipsMore = document.getElementById('chips-more');
+function updateChipsMore() {
+  if (listChips && chipsMore) {
+    const atEnd = listChips.scrollLeft + listChips.clientWidth >= listChips.scrollWidth - 4;
+    chipsMore.classList.toggle('hidden', atEnd);
+  }
+}
+if (listChips) listChips.addEventListener('scroll', updateChipsMore);
 
 /* ============================================================ AUTH */
 let sb = null, currentUser = null;
@@ -630,15 +690,13 @@ function setApkStatus(msg) {
   if (el) el.textContent = msg;
 }
 
-function renderAndroidVersionLine() {
-  const el = $('#android-version-line');
+function renderAppVersion() {
+  const el = $('#apk-ver-line');
   if (!el) return;
-  if (window.AndroidBridge) {
-    const code = window.AndroidBridge.getAppVersion ? window.AndroidBridge.getAppVersion() : 0;
-    const name = window.AndroidBridge.getAppVersionName ? window.AndroidBridge.getAppVersionName() : '';
-    el.innerHTML = 'Installed app version: <strong>v' + esc(name || code) + '</strong> <span style="opacity:.75">(code ' + code + ')</span>';
+  if (window.AndroidBridge && window.AndroidBridge.getAppVersionName) {
+    el.textContent = 'v' + window.AndroidBridge.getAppVersionName();
   } else {
-    el.innerHTML = 'Installed app version: <strong>n/a</strong> <span style="opacity:.75">(opened in a browser — install the APK from the website)</span>';
+    el.textContent = '—';
   }
 }
 
@@ -715,7 +773,7 @@ if (apkCheckBtn) apkCheckBtn.addEventListener('click', async () => {
   if (!window.AndroidBridge) { toast('Open Marginalia from the Android app to check for app updates'); return; }
   toast('Checking for updates…');
   const found = await checkApkUpdate(true);
-  if (!found) renderAndroidVersionLine();
+  if (!found) renderAppVersion();
 });
 
 /* ---- Crash log (diagnostics helper) ---- */
@@ -758,61 +816,19 @@ if (penToggle) penToggle.addEventListener('change', () => {
   }
 });
 
-/* ============================================================ UPDATE CHECK */
-function showUpdateBar(version) {
-  if (apkUpdate) return;
-  const bar = document.getElementById('update-bar');
-  if (bar) {
-    bar.classList.add('show');
-    bar.querySelector('span').textContent = version
-      ? 'New version available (v'+version+'). Tap Restart to update.'
-      : 'A new version is available. Tap Restart to update.';
-  }
-}
-
-async function checkForUpdates() {
-  try {
-    const res = await fetch('./version.json?t='+Date.now(), { cache: 'no-store' });
-    if (res.ok) {
-      const { version } = await res.json();
-      if (version && version !== APP_VERSION) {
-        showUpdateBar(version);
-        return true;
-      }
-    }
-  } catch (e) { console.log('Update check failed:', e); }
-  return false;
-}
-
+/* ============================================================ APP UPDATES */
 // Check on load
-checkForUpdates();
 checkApkUpdate();
-// Check every time user comes back to the tab
+// Check every time the user comes back to the tab
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { checkForUpdates(); checkApkUpdate(); }
+  if (!document.hidden) checkApkUpdate();
 });
-// Check every 3 minutes
-setInterval(checkForUpdates, 3*60*1000);
-// Check for APK updates less often (30 minutes)
+// Check for updates less often (30 minutes)
 setInterval(checkApkUpdate, 30*60*1000);
-
-// Settings button
-const checkBtn = document.getElementById('set-check-update');
-if (checkBtn) checkBtn.addEventListener('click', async () => {
-  toast('Checking for updates...');
-  const found = await checkForUpdates();
-  if (!found) toast('App is up to date (v'+APP_VERSION+')');
-});
 
 /* ============================================================ SERVICE WORKER */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').then(reg => {
-    // Listen for SW update messages
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'SW_UPDATED') {
-        showUpdateBar();
-      }
-    });
     // Check for SW updates every 30 seconds
     setInterval(() => {
       reg.update().then(() => {
@@ -843,11 +859,21 @@ document.addEventListener('android-save-note', async (e) => {
 
 /* ============================================================ INIT */
 (async function boot() {
-  if (window.AndroidBridge) document.body.classList.add('android');
+  if (window.AndroidBridge) {
+    document.body.classList.add('android');
+    // Hide the in-page pen and panel outright inside the native app, so the
+    // OS-level floating pen service is the only pen on screen.
+    const penEl = document.getElementById('pen');
+    if (penEl) penEl.style.display = 'none';
+    const panelEl = document.getElementById('panel');
+    if (panelEl) panelEl.style.display = 'none';
+  }
   initSupabase(); await initStore(); await getSessionUser();
   renderList(); state.activeSession = await store.getActiveSession();
   updateSyncDot();
-  renderAndroidVersionLine();
+  renderAppVersion();
+  renderTopbarAuth();
+  renderActiveBanner();
   updateBackButton();
   if (navigator.onLine && currentUser) flushSyncQueue();
 })();

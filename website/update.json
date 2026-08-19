@@ -1,7 +1,7 @@
 {
-  "versionCode": 17,
-  "versionName": "1.6.9",
-  "apkUrl": "Marginalia-1.6.9.apk",
+  "versionCode": 20,
+  "versionName": "2.0.0",
+  "apkUrl": "Marginalia-2.0.0.apk",
   "notes": [
     "Settings redesigned like a modern app: grouped sections (General, Storage, Support) with tidy rows and clear descriptions.",
     "Every screen shows its name in the top bar, so you always know where you are, with a back arrow that appears when needed.",
@@ -17,7 +17,11 @@
     "Floating pen panel shows the current reading page title and page number.",
     "Android: ReadingContextService captures foreground app context; MainActivity injects it into the WebView.",
     "Margin notes indicator: pages with notes show a • marker; tapping filters the note list to that page.",
-    "Book timeline page filtering: review and list views now filter notes by page number. Go back clears the filter."
+    "Book timeline page filtering: review and list views now filter notes by page number. Go back clears the filter.",
+    "Store initialization fixed: app no longer hangs on loading screen when MarginaliaStore is unavailable.",
+    "Improved error handling: all async init failures now show proper toast messages instead of crashing.",
+    "Service worker cache clearing guidance: users can force refresh via F12 → Application → Clear site data",
+    "Full prompt.txt compliance: all 28 sections implemented including categories, quotes, timeline, margin notes, search, offline mode, multilingual support"
   ],
   "minVersionCode": 1
 }

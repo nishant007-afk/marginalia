@@ -28,7 +28,35 @@ function getJsErrors() {
 }
 
 /* ================================================================ STORE */
-const { Store } = window.MarginaliaStore || {};
+const Store = window.MarginaliaStore && window.MarginaliaStore.Store || (function() {
+  // Fallback Store class if MarginaliaStore is not globally defined
+  class Store {
+    constructor(dbName, dbType) {
+      this.dbName = dbName;
+      this.dbType = dbType;
+      this.db = null;
+    }
+    async loadAsync() {
+      try {
+        const request = indexedDB.open(this.dbName, 1);
+        await new Promise((resolve, reject) => {
+          request.onupgradeneeded = (e) => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains('kv')) {
+              db.createObjectStore('kv');
+            }
+          };
+          request.onsuccess = (e) => {
+            this.db = e.target.result;
+            resolve();
+          };
+          request.onerror = (e) => reject(e);
+        });
+      } catch (e) { /* IndexedDB not available */ }
+    }
+  }
+  return Store;
+})();
 const IDB = {
   async: true, ensureDir: async () => {},
   read: async (file) => {
@@ -1106,9 +1134,13 @@ document.addEventListener('android-save-note', async (e) => {
     const panelEl = document.getElementById('panel');
     if (panelEl) panelEl.style.display = 'none';
   }
-  initSupabase(); await initStore(); await getSessionUser();
+  await initStore(); await initSupabase(); await getSessionUser();
   applyAppearance();
-  if (!store) setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
+  if (!store) {
+    setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
+    hideSplash();
+    return;
+  }
   renderList(); state.activeSession = await store.getActiveSession();
   updateSyncDot();
   renderAppVersion();

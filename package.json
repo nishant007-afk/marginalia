@@ -11,6 +11,7 @@
     "smoke": "cross-env SMOKE_TEST=1 electron .",
     "test": "node test/store.test.js",
     "check": "node scripts/check.js",
+    "check-sync": "node scripts/check-sync.js",
     "dist": "electron-builder --win nsis",
     "icons": "electron scripts/make-icons.js"
   },

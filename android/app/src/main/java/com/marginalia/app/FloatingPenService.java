@@ -34,9 +34,9 @@ public class FloatingPenService extends Service {
     private WindowManager.LayoutParams penParams;
     private WindowManager.LayoutParams panelParams;
     private boolean panelOpen = false;
-    private int penSize = dpToPx(52);
-    private int panelWidth = dpToPx(300);
-    private int panelHeight = dpToPx(420);
+    private int penSize;
+    private int panelWidth;
+    private int panelHeight;
     private String selectedCategory = "observe";
     private static final String CHANNEL_ID = "marginalia_pen";
 

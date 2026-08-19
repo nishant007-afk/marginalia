@@ -82,6 +82,15 @@ function fmtDate(iso) {
   return d.toLocaleDateString(undefined, d.getFullYear()===now.getFullYear()?{month:'short',day:'numeric'}:{year:'numeric',month:'short',day:'numeric'});
 }
 function fmtDT(iso) { return iso ? new Date(iso).toLocaleString() : ''; }
+function fmtRel(iso) {
+  if (!iso) return '';
+  const d = new Date(iso); const now = new Date();
+  const s = Math.floor((now - d) / 1000);
+  if (s < 60) return 'now';
+  const m = Math.floor(s / 60); if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60); if (h < 24) return h + 'h';
+  return fmtDate(iso);
+}
 function noteTitle(n) {
   if (n.title) return n.title;
   const first = (n.content||'').split('\n').map(l=>l.trim()).find(Boolean);
@@ -157,10 +166,10 @@ async function showCategoryNotes(cat) {
   const notes = await store.listNotes({ category: cat });
   const el = $('#cat-list'); el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="btn btn-g btn-sm" id="cat-back">&larr; Back</button><span style="font-size:14px;font-weight:600">'+CATEGORIES[cat].label+'</span></div>';
   $('#cat-back').onclick = () => { state.catView = null; renderCategories(); };
-  if (!notes.length) { el.innerHTML += '<div class="empty">No notes in this category yet.</div>'; return; }
+  if (!notes.length) { el.innerHTML += '<div class="empty"><div class="ei"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></div>No notes in this category yet.</div>'; return; }
   for (const n of notes) {
     const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='8px';
-    card.innerHTML = '<div class="card-top"><span class="ct">'+esc(noteTitle(n))+'</span></div>'+(notePreview(n)?'<div class="cp">'+esc(notePreview(n))+'</div>':'')+(n.book?'<div class="cm">'+esc(n.book)+'</div>':'');
+    card.innerHTML = '<div class="card-top"><span class="ct">'+esc(noteTitle(n))+'</span><span class="cd">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div>'+(notePreview(n)?'<div class="cp">'+esc(notePreview(n))+'</div>':'')+(n.book?'<div class="cm">'+esc(n.book)+'</div>':'');
     card.onclick = () => openEditor(n.id); el.appendChild(card);
   }
   updateBackButton();
@@ -183,13 +192,18 @@ async function renderList() {
   const list = $('#list');
   const notes = await store.listNotes({ category: state.catFilter==='all'?undefined:state.catFilter, query: state.search||undefined });
   list.innerHTML = '';
-  if (!notes.length) { list.innerHTML = '<div class="empty">'+(state.search?'No matches.':'No notes yet. Tap the pen to start.')+'</div>'; return; }
+  if (!notes.length) {
+    const ei = state.search ? '<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>' : '<i class="fa-solid fa-pen-nib" aria-hidden="true"></i>';
+    list.innerHTML = '<div class="empty"><div class="ei">'+ei+'</div>'+(state.search ? 'Nothing matches "'+esc(state.search)+'".' : 'No notes yet. Tap the pen or the + button to add your first one.')+'</div>';
+    return;
+  }
   for (const n of notes) {
     const card = document.createElement('div'); card.className = 'card';
     const catLabel = (CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category;
     const prev = notePreview(n);
     const src = n.sourceText ? '<div class="cs">Source: '+esc(n.sourceText.slice(0,80))+'</div>' : '';
-    card.innerHTML = '<div class="card-top"><span class="cc">'+esc(catLabel)+'</span><span class="ct">'+esc(noteTitle(n))+'</span></div>'+(prev?'<div class="cp">'+esc(prev)+'</div>':'')+(n.book?'<div class="cm">'+esc(n.book)+(n.page?' p.'+esc(n.page):'')+'</div>':'')+src;
+    const bookLine = n.book ? '<div class="cm">'+esc(n.book)+(n.page?' · p.'+esc(n.page):'')+'</div>' : '';
+    card.innerHTML = '<div class="card-top"><span class="cc">'+esc(catLabel)+'</span><span class="ct">'+esc(noteTitle(n))+'</span><span class="cd">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div>'+(prev?'<div class="cp">'+esc(prev)+'</div>':'')+bookLine+src;
     card.onclick = () => openEditor(n.id); list.appendChild(card);
   }
   const stats = await store.getStats();
@@ -313,11 +327,11 @@ async function renderReview() {
   else if (range==='week') filtered = all.filter(n => new Date(n.updatedAt||n.createdAt).getTime() >= now-7*day);
   else filtered = all.filter(n => new Date(n.updatedAt||n.createdAt).getTime() >= now-30*day);
   const list = $('#rl'); list.innerHTML = '';
-  if (!filtered.length) { list.innerHTML='<div class="empty">Nothing in this range yet.</div>'; return; }
+  if (!filtered.length) { list.innerHTML='<div class="empty"><div class="ei"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></div>Nothing in this range yet.</div>'; return; }
   for (const n of filtered) {
     const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='8px';
     const src = n.sourceText ? '<div class="cs">Source: '+esc(n.sourceText.slice(0,60))+'</div>' : '';
-    card.innerHTML = '<div class="card-top"><span class="cc">'+esc((CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category)+'</span><span class="ct">'+esc(noteTitle(n))+'</span></div>'+(notePreview(n)?'<div class="cp">'+esc(notePreview(n))+'</div>':'')+src;
+    card.innerHTML = '<div class="card-top"><span class="cc">'+esc((CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category)+'</span><span class="ct">'+esc(noteTitle(n))+'</span><span class="cd">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div>'+(notePreview(n)?'<div class="cp">'+esc(notePreview(n))+'</div>':'')+src;
     card.onclick = () => openEditor(n.id); list.appendChild(card);
   }
 }
@@ -386,11 +400,36 @@ async function renderSessions() {
     list.appendChild(item);
   }
 }
-$('#s-new').addEventListener('click', () => $('#modal-session').classList.add('show'));
-$('#ms-start').addEventListener('click', async () => {
-  const book=$('#ms-book').value.trim(), author=$('#ms-author').value.trim();
-  await store.createSession({book,author}); closeModal('modal-session');
-  await refreshActiveState(); toast('Session started'); renderSessions(); renderList();
+$('#s-new').addEventListener('click', () => {
+  $('#modal-session').classList.add('show');
+  updateBackButton();
+  setTimeout(() => { const f = $('#ms-book'); if (f) f.focus(); }, 60);
+});
+const startSession = async () => {
+  const f = $('#ms-start');
+  if (f) f.disabled = true;
+  try {
+    const book = $('#ms-book').value.trim(), author = $('#ms-author').value.trim();
+    await store.createSession({ book, author });
+    $('#ms-book').value = ''; $('#ms-author').value = '';
+    closeModal('modal-session');
+    await refreshActiveState();
+    toast('Session started');
+    renderSessions();
+    renderList();
+  } catch (e) {
+    closeModal('modal-session');
+    toast('Could not start the session');
+  } finally {
+    if (f) f.disabled = false;
+  }
+};
+$('#ms-start').addEventListener('click', startSession);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && $('#modal-session').classList.contains('show')) {
+    const t = e.target;
+    if (t && (t.id === 'ms-book' || t.id === 'ms-author')) { e.preventDefault(); startSession(); }
+  }
 });
 
 /* ============================================================ SETTINGS */
@@ -650,11 +689,12 @@ window.addEventListener('offline', () => { toast('Offline. Saving locally.'); up
 if (Store) {
   const origCreate=Store.prototype.createNote, origUpdate=Store.prototype.updateNote, origDelete=Store.prototype.deleteNote;
   const origCreateSess=Store.prototype.createSession, origEndSess=Store.prototype.endSession;
-  Store.prototype.createNote=async function(i){const n=origCreate.call(this,i);if(navigator.onLine&&sb&&currentUser){try{await sb.from('notes').upsert({id:n.id,user_id:currentUser.id,category:n.category,title:n.title,content:n.content,book:n.book,author:n.author,page:n.page,source_text:n.sourceText,tags:n.tags||[],session_id:n.sessionId,links:n.links||[],created_at:n.createdAt,updated_at:n.updatedAt});}catch{await addToSyncQueue('upsert','notes',n.id,n);}}else{await addToSyncQueue('upsert','notes',n.id,n);}return n;};
-  Store.prototype.updateNote=async function(id,p){const n=origUpdate.call(this,id,p);if(!n)return null;if(navigator.onLine&&sb&&currentUser){try{await sb.from('notes').upsert({id:n.id,user_id:currentUser.id,category:n.category,title:n.title,content:n.content,book:n.book,author:n.author,page:n.page,source_text:n.sourceText,tags:n.tags||[],session_id:n.sessionId,links:n.links||[],created_at:n.createdAt,updated_at:n.updatedAt},{onConflict:'id'});}catch{await addToSyncQueue('upsert','notes',n.id,n);}}else{await addToSyncQueue('upsert','notes',n.id,n);}return n;};
-  Store.prototype.deleteNote=async function(id){const r=origDelete.call(this,id);if(navigator.onLine&&sb&&currentUser){try{await sb.from('notes').delete().eq('id',id).eq('user_id',currentUser.id);}catch{await addToSyncQueue('delete','notes',id);}}else{await addToSyncQueue('delete','notes',id);}return r;};
-  Store.prototype.createSession=async function(d){const s=origCreateSess.call(this,d);if(navigator.onLine&&sb&&currentUser){try{await sb.from('sessions').upsert({id:s.id,user_id:currentUser.id,book:s.book,author:s.author,chapter:s.chapter,page_range:s.pageRange,started_at:s.startedAt,ended_at:s.endedAt,created_at:s.createdAt,updated_at:s.updatedAt});}catch{await addToSyncQueue('upsert','sessions',s.id,s);}}else{await addToSyncQueue('upsert','sessions',s.id,s);}return s;};
-  Store.prototype.endSession=async function(id){const s=origEndSess.call(this,id);if(!s)return null;if(navigator.onLine&&sb&&currentUser){try{await sb.from('sessions').upsert({id:s.id,user_id:currentUser.id,book:s.book,author:s.author,chapter:s.chapter,page_range:s.pageRange,started_at:s.startedAt,ended_at:s.endedAt,created_at:s.createdAt,updated_at:s.updatedAt},{onConflict:'id'});}catch{await addToSyncQueue('upsert','sessions',s.id,s);}}else{await addToSyncQueue('upsert','sessions',s.id,s);}return s;};
+  const queueSafe = (action,table,id,data) => { try { return Promise.resolve(addToSyncQueue(action,table,id,data)).catch((e)=>console.log('sync queue failed',e)); } catch (e) { return Promise.resolve(); } };
+  Store.prototype.createNote=async function(i){const n=origCreate.call(this,i);if(navigator.onLine&&sb&&currentUser){try{await sb.from('notes').upsert({id:n.id,user_id:currentUser.id,category:n.category,title:n.title,content:n.content,book:n.book,author:n.author,page:n.page,source_text:n.sourceText,tags:n.tags||[],session_id:n.sessionId,links:n.links||[],created_at:n.createdAt,updated_at:n.updatedAt});}catch{await queueSafe('upsert','notes',n.id,n);}}else{await queueSafe('upsert','notes',n.id,n);}return n;};
+  Store.prototype.updateNote=async function(id,p){const n=origUpdate.call(this,id,p);if(!n)return null;if(navigator.onLine&&sb&&currentUser){try{await sb.from('notes').upsert({id:n.id,user_id:currentUser.id,category:n.category,title:n.title,content:n.content,book:n.book,author:n.author,page:n.page,source_text:n.sourceText,tags:n.tags||[],session_id:n.sessionId,links:n.links||[],created_at:n.createdAt,updated_at:n.updatedAt},{onConflict:'id'});}catch{await queueSafe('upsert','notes',n.id,n);}}else{await queueSafe('upsert','notes',n.id,n);}return n;};
+  Store.prototype.deleteNote=async function(id){const r=origDelete.call(this,id);if(navigator.onLine&&sb&&currentUser){try{await sb.from('notes').delete().eq('id',id).eq('user_id',currentUser.id);}catch{await queueSafe('delete','notes',id);}}else{await queueSafe('delete','notes',id);}return r;};
+  Store.prototype.createSession=async function(d){const s=origCreateSess.call(this,d);if(navigator.onLine&&sb&&currentUser){try{await sb.from('sessions').upsert({id:s.id,user_id:currentUser.id,book:s.book,author:s.author,chapter:s.chapter,page_range:s.pageRange,started_at:s.startedAt,ended_at:s.endedAt,created_at:s.createdAt,updated_at:s.updatedAt});}catch{await queueSafe('upsert','sessions',s.id,s);}}else{await queueSafe('upsert','sessions',s.id,s);}return s;};
+  Store.prototype.endSession=async function(id){const s=origEndSess.call(this,id);if(!s)return null;if(navigator.onLine&&sb&&currentUser){try{await sb.from('sessions').upsert({id:s.id,user_id:currentUser.id,book:s.book,author:s.author,chapter:s.chapter,page_range:s.pageRange,started_at:s.startedAt,ended_at:s.endedAt,created_at:s.createdAt,updated_at:s.updatedAt},{onConflict:'id'});}catch{await queueSafe('upsert','sessions',s.id,s);}}else{await queueSafe('upsert','sessions',s.id,s);}return s;};
 }
 
 /* ============================================================ EXPORT */
@@ -861,12 +901,12 @@ document.addEventListener('android-save-note', async (e) => {
 (async function boot() {
   if (window.AndroidBridge) {
     document.body.classList.add('android');
-    // Hide the in-page pen and panel outright inside the native app, so the
+    // Remove the in-page pen and panel outright inside the native app, so the
     // OS-level floating pen service is the only pen on screen.
     const penEl = document.getElementById('pen');
-    if (penEl) penEl.style.display = 'none';
+    if (penEl) penEl.remove();
     const panelEl = document.getElementById('panel');
-    if (panelEl) panelEl.style.display = 'none';
+    if (panelEl) panelEl.remove();
   }
   initSupabase(); await initStore(); await getSessionUser();
   renderList(); state.activeSession = await store.getActiveSession();

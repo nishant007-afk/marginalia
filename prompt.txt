@@ -1,0 +1,608 @@
+Got it. You can copy this directly into a `.txt` file. I've kept it focused on **how the finished app should behave**, rather than turning it into a technical development prompt.
+
+# HOW THE APP SHOULD WORK
+
+## 1. Main Purpose
+
+The app is a reading companion designed for people who want to capture their thoughts while reading.
+
+The core experience should be:
+
+**Read → Notice → Write → Save → Continue Reading**
+
+The app should feel like a digital notebook attached directly to the book.
+
+It should help users capture:
+
+* Observations
+* Connections
+* Thoughts
+* Quotes
+* Lines
+* Drafts
+
+The main idea is that every piece of writing should remain connected to the exact place in the book where it was created.
+
+---
+
+## 2. Platforms
+
+The app should work on:
+
+* Desktop
+* Android
+
+The same library and account should work across both platforms.
+
+Reading progress and notes should automatically synchronize between devices.
+
+For example:
+
+If I read a PDF on my desktop until page 142 and write three notes there, I should be able to open the same book on Android and continue from page 142 with those notes available.
+
+---
+
+# 3. Reading Experience
+
+The reading experience should be the center of the application.
+
+The user should be able to open a:
+
+* PDF
+* EPUB
+* TXT
+
+and read it normally inside the app.
+
+The app should remember:
+
+* Current book
+* Current page
+* Current reading position
+* Chapter, when available
+* Reading progress
+
+When the user closes the book and returns later, it should automatically open at the same location.
+
+---
+
+# 4. Floating Pen
+
+While reading, there should be a small floating **pen icon** on the left side of the screen.
+
+It should remain visible while reading without being distracting.
+
+The user should be able to:
+
+* Click it to open the writing panel
+* Drag it to another position
+* Collapse the panel again
+* Continue reading immediately
+
+The floating button should be small and unobtrusive.
+
+It should feel similar to having a pen beside a physical book.
+
+---
+
+# 5. Writing Panel
+
+When the user clicks the pen, a small writing panel should expand.
+
+The panel should automatically know where the reader currently is.
+
+It should show, when available:
+
+* Book title
+* Chapter
+* Page
+* Selected text
+* Current reading location
+
+The user should **not** have to manually type the page number or book name.
+
+The user should simply choose what they want to write and start typing.
+
+---
+
+# 6. Writing Categories
+
+Keep the writing system simple.
+
+The main categories should be:
+
+### Observation
+
+Something the user literally noticed.
+
+Example:
+
+> A man keeps checking the clock.
+
+The purpose is to encourage the user to record what they see before interpreting it.
+
+---
+
+### Connection
+
+Something the observation reminds the user of.
+
+Example:
+
+> Waiting changes people.
+
+---
+
+### Thought
+
+A thought, realization, question, or philosophical idea that came while reading.
+
+Example:
+
+> Maybe people don't fear change. They fear becoming someone they don't recognize.
+
+---
+
+### Quote
+
+A passage from the book that the user wants to remember.
+
+The quote should automatically remain connected to its original page/location.
+
+---
+
+### Line
+
+A sentence, phrase, poetic fragment, or idea that the user may want to use later.
+
+Example:
+
+> The shop closed before the day did.
+
+---
+
+### Draft
+
+Longer writing.
+
+This can be:
+
+* A poem
+* A paragraph
+* A collection of lines
+* An unfinished idea
+* Any other creative writing
+
+---
+
+# 7. Highlighting Text
+
+If the user selects/highlights text while reading, the app should automatically recognize it.
+
+When the writing panel opens, the selected text should already be attached to the note.
+
+For example:
+
+**Book:** Night Sky with Exit Wounds
+
+**Page:** 42
+
+**Selected text:**
+[highlighted passage]
+
+**Category:** Observation
+
+**My note:**
+
+> The image feels more important than the explanation.
+
+The user should not need to copy and paste the passage.
+
+---
+
+# 8. Automatic Page Connection
+
+This is one of the most important features.
+
+Every note should automatically be connected to the exact place where it was written.
+
+For example:
+
+**Book → Page 86**
+
+* Highlight
+* Observation
+* Connection
+* Line
+
+If the user returns to page 86 months later, those notes should still be available.
+
+The user should be able to see:
+
+**What I read**
+
+↓
+
+**What I noticed**
+
+↓
+
+**What I thought**
+
+↓
+
+**What I wrote**
+
+---
+
+# 9. Margin Notes
+
+Pages containing notes should have a small indicator.
+
+The indicator should be subtle and should not interfere with the book.
+
+Clicking the indicator should show the notes connected to that page.
+
+It should feel similar to opening a handwritten note in the margin of a physical book.
+
+---
+
+# 10. Book Timeline
+
+Every book should have a timeline showing the user's thinking throughout the book.
+
+Example:
+
+**Devotions**
+
+Chapter 2
+
+**Page 41**
+
+* Quote
+* Observation
+
+**Page 42**
+
+* Connection
+* Line
+
+**Page 43**
+
+* Thought
+
+**Page 44**
+
+* Draft
+
+This allows the user to revisit not only what they read, but **how they responded to it.**
+
+---
+
+# 11. Library
+
+The library should primarily focus on books.
+
+Each book can show:
+
+* Cover
+* Title
+* Author
+* Reading progress
+* Last opened
+* Current page
+* Number of notes
+
+The main action should be:
+
+**Continue Reading**
+
+The library should not become a complicated productivity dashboard.
+
+---
+
+# 12. Search
+
+Users should be able to search their writing.
+
+Search should work across:
+
+* Notes
+* Quotes
+* Observations
+* Connections
+* Thoughts
+* Lines
+* Drafts
+* Book titles
+* Authors
+
+Search should support every language the user writes in.
+
+---
+
+# 13. Synchronization
+
+Desktop and Android should automatically synchronize.
+
+Sync:
+
+* Books
+* Reading progress
+* Current page
+* Reading location
+* Highlights
+* Notes
+* Drafts
+* Book-note relationships
+
+Example:
+
+I write this on Desktop:
+
+**Book:** Meditations
+**Page:** 73
+**Observation:** "He keeps returning to the same idea."
+
+Later I open Android.
+
+The same book should show the same page and the same note.
+
+---
+
+# 14. Offline Usage
+
+The app should still work when there is no internet.
+
+Users should be able to:
+
+* Read downloaded books
+* Create notes
+* Highlight text
+* Edit notes
+* Write drafts
+
+When internet becomes available, changes should synchronize automatically.
+
+The user should never lose writing because of a temporary connection problem.
+
+---
+
+# 15. Multilingual Writing
+
+There should be **no language restriction**.
+
+Users should be able to write in:
+
+* English
+* Nepali
+* Hindi
+* Japanese
+* Chinese
+* Korean
+* Arabic
+* Any other Unicode-supported language
+
+Users should also be able to mix languages in the same note.
+
+For example:
+
+> The rain feels different today.
+> आज मन अलि भारी छ।
+
+The app should preserve the user's exact writing.
+
+It should not automatically translate or change it.
+
+---
+
+# 16. Autosave
+
+Everything the user writes should automatically save.
+
+The user should not have to worry about losing a thought because they accidentally closed the panel.
+
+Saving should happen quietly in the background.
+
+The app should not interrupt the reading experience with unnecessary confirmation messages.
+
+---
+
+# 17. Editing
+
+Users should be able to edit any note later.
+
+Editing the text should not remove its original reading context.
+
+For example:
+
+A note created on page 57 should remain connected to page 57 even after the user edits the note.
+
+---
+
+# 18. UI / UX
+
+The existing layout should remain largely the same.
+
+Do not completely redesign the application.
+
+The goal is to **improve the existing app**, not replace it.
+
+The UI should feel like a proper finished application.
+
+Focus on:
+
+* Clean spacing
+* Consistent typography
+* Clear hierarchy
+* Consistent buttons
+* Consistent icons
+* Smooth interactions
+* Good animations
+* Responsive layouts
+* Comfortable reading
+* Easy navigation
+
+The book should always remain the visual priority.
+
+The writing panel should feel like an extension of the reading experience rather than a separate application.
+
+---
+
+# 19. Visual Style
+
+The overall feeling should be:
+
+* Minimal
+* Calm
+* Literary
+* Modern
+* Professional
+* Comfortable
+
+Avoid unnecessary:
+
+* Gradients
+* Animations
+* Statistics
+* Streaks
+* Achievements
+* Gamification
+* Notifications
+* Complicated dashboards
+* Excessive buttons
+
+The application should be quiet.
+
+It should not constantly demand the user's attention.
+
+---
+
+# 20. Desktop UI
+
+On desktop:
+
+* The book should occupy most of the screen.
+* The floating pen should remain accessible.
+* The writing panel should be compact.
+* The user should be able to continue reading immediately after saving.
+* Large screens should be used efficiently.
+* Nothing should unnecessarily cover the book.
+
+---
+
+# 21. Android UI
+
+On Android:
+
+* The reading area should remain comfortable.
+* Buttons should be easy to tap.
+* The writing panel should work well with the keyboard.
+* The floating pen should not cover important text.
+* The interface should adapt naturally to smaller screens.
+
+---
+
+# 22. Dark Mode
+
+If dark mode is available, it should be comfortable for long reading sessions.
+
+Avoid harsh pure-black backgrounds where possible.
+
+Text should have comfortable contrast.
+
+The reading experience should remain easy on the eyes.
+
+---
+
+# 23. Data Safety
+
+The user's writing is personal and important.
+
+The app should never lose:
+
+* Notes
+* Drafts
+* Highlights
+* Reading progress
+* Book relationships
+
+Data should survive:
+
+* Closing the app
+* Restarting the device
+* Going offline
+* Synchronization
+* App updates
+
+---
+
+# 24. What the App Should NOT Become
+
+The app should not become:
+
+* A generic notes app
+* A social media platform
+* A productivity tracker
+* A habit tracker
+* An AI poem generator
+* A complicated knowledge-management system
+
+The purpose is simple:
+
+**Help the user think while reading.**
+
+---
+
+# 25. Ideal Experience
+
+Imagine someone reading a book.
+
+They reach an interesting paragraph.
+
+They highlight it.
+
+They click the floating pen.
+
+The app automatically knows:
+
+**Book:** The book they're reading
+**Chapter:** Current chapter
+**Page:** Current page
+**Selected text:** The highlighted passage
+
+They choose:
+
+**Observation**
+
+and write:
+
+> Everyone in this scene seems to be talking, but nobody is actually saying anything.
+
+They save it.
+
+The panel disappears.
+
+They continue reading.
+
+Three months later, they return to that page.
+
+The highlighted passage is still there.
+
+Their observation is still there.
+
+They add a new connection.
+
+Eventually that connection becomes a line.
+
+That line becomes part of a poem.
+
+The app has preserved the entire journey:
+
+**Book → Page → Observation → Connection → Line → Draft → Poem**
+
+That is what the application should ultimately provide.
+
+It should not simply store writing.
+
+It should preserve **the relationship between what the reader read, what they noticed, what they thought, and what they eventually created.**

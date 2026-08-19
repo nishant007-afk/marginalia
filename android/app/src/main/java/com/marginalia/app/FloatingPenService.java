@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.LocaleList;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -26,10 +27,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import android.content.pm.ServiceInfo;
+import org.json.JSONObject;
 
 public class FloatingPenService extends Service {
 
-    private WindowManager windowManager;
+private WindowManager windowManager;
     private View penView;
     private View panelView;
     private WindowManager.LayoutParams penParams;
@@ -37,9 +39,13 @@ public class FloatingPenService extends Service {
     private boolean panelOpen = false;
     private int penSize;
     private int panelWidth;
-    private int panelHeight;
+    int panelHeight;
     private String selectedCategory = "observe";
     private static final String CHANNEL_ID = "marginalia_pen";
+    private TextView contextView;  // line showing what page we're reading
+    private Handler penHandler = new Handler(Looper.getMainLooper());
+    private Runnable penTransparencyRunnable = null;
+    private float penClickX, penClickY;
 
     private static final String[][] CATEGORIES = {
         {"observe", "Observe", "What did you notice?"},
@@ -110,9 +116,10 @@ public class FloatingPenService extends Service {
         FrameLayout container = new FrameLayout(this);
         container.setLayoutParams(new FrameLayout.LayoutParams(penSize, penSize));
 
-        // Gold circle background
+        // Gold rectangle background (instead of circle)
         GradientDrawable bg = new GradientDrawable();
-        bg.setShape(GradientDrawable.OVAL);
+        bg.setShape(GradientDrawable.RECTANGLE);
+        bg.setCornerRadius(0);
         bg.setColor(Color.parseColor("#D4A853"));
         container.setBackground(bg);
 
@@ -152,6 +159,12 @@ public class FloatingPenService extends Service {
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
                         moved = false;
+                        // When pen is open, track outside clicks to close it
+                        if (panelOpen) {
+                            // Record the pen's current position to check against later
+                            penClickX = initialTouchX;
+                            penClickY = initialTouchY;
+                        }
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
@@ -159,6 +172,8 @@ public class FloatingPenService extends Service {
                         float dy = event.getRawY() - initialTouchY;
                         if (Math.abs(dx) > CLICK_THRESHOLD || Math.abs(dy) > CLICK_THRESHOLD) {
                             moved = true;
+                            // Reset transparency timer when user drags the pen
+                            stopPenTransparencyTimer();
                         }
                         penParams.x = initialX + (int) dx;
                         penParams.y = initialY + (int) dy;
@@ -172,7 +187,20 @@ public class FloatingPenService extends Service {
 
                     case MotionEvent.ACTION_UP:
                         if (!moved) {
-                            togglePanel();
+                            // If panel is open and user clicked outside the pen, close it
+                            if (panelOpen) {
+                                // Check if touch was outside the pen area
+                                if (initialTouchX < penParams.x || initialTouchX > penParams.x + penSize
+                                        || initialTouchY < penParams.y || initialTouchY > penParams.y + penSize) {
+                                    closePanel();
+                                } else {
+                                    // User tapped the pen - start transparency timer
+                                    startPenTransparencyTimer();
+                                }
+                            } else {
+                                // Panel is closed - toggle it open
+                                togglePanel();
+                            }
                         }
                         return true;
                 }
@@ -224,7 +252,7 @@ public class FloatingPenService extends Service {
         root.setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12));
 
         GradientDrawable rootBg = new GradientDrawable();
-        rootBg.setCornerRadius(dpToPx(16));
+        rootBg.setCornerRadius(0);
         rootBg.setColor(Color.parseColor("#1A1A1A"));
         rootBg.setStroke(1, Color.parseColor("#222222"));
         root.setBackground(rootBg);
@@ -247,13 +275,20 @@ public class FloatingPenService extends Service {
         doneBtn.setTextSize(13);
         doneBtn.setPadding(dpToPx(10), dpToPx(6), dpToPx(10), dpToPx(6));
         GradientDrawable doneBg = new GradientDrawable();
-        doneBg.setCornerRadius(dpToPx(8));
+        doneBg.setCornerRadius(0);
         doneBg.setColor(Color.parseColor("#1A1A1A"));
         doneBg.setStroke(1, Color.parseColor("#D4A853"));
         doneBtn.setBackground(doneBg);
         doneBtn.setOnClickListener(v -> closePanel());
         header.addView(doneBtn);
         root.addView(header);
+
+        // Line showing the currently-reading page/book
+        contextView = new TextView(this);
+        contextView.setTextSize(11);
+        contextView.setTextColor(Color.parseColor("#666666"));
+        contextView.setPadding(0, dpToPx(4), 0, dpToPx(4));
+        root.addView(contextView);
 
         // Prompt text (declare BEFORE chips so chip handlers can reference it)
         final TextView prompt = new TextView(this);
@@ -279,9 +314,9 @@ public class FloatingPenService extends Service {
             chip.setTextSize(11);
             chip.setTextColor(Color.parseColor("#666666"));
             chip.setPadding(dpToPx(10), dpToPx(5), dpToPx(10), dpToPx(5));
-            GradientDrawable chipBg = new GradientDrawable();
-            chipBg.setCornerRadius(dpToPx(20));
-            chipBg.setColor(Color.TRANSPARENT);
+GradientDrawable chipBg = new GradientDrawable();
+        chipBg.setCornerRadius(0);
+        chipBg.setColor(Color.TRANSPARENT);
             chipBg.setStroke(1, Color.parseColor("#333333"));
             chip.setBackground(chipBg);
 
@@ -325,7 +360,7 @@ public class FloatingPenService extends Service {
         input.setGravity(android.view.Gravity.TOP);
         input.setPadding(dpToPx(12), dpToPx(10), dpToPx(12), dpToPx(10));
         GradientDrawable inputBg = new GradientDrawable();
-        inputBg.setCornerRadius(dpToPx(12));
+        inputBg.setCornerRadius(0);
         inputBg.setColor(Color.parseColor("#222222"));
         inputBg.setStroke(1, Color.parseColor("#333333"));
         input.setBackground(inputBg);
@@ -342,7 +377,7 @@ public class FloatingPenService extends Service {
         saveBtn.setGravity(Gravity.CENTER);
         saveBtn.setPadding(dpToPx(20), dpToPx(10), dpToPx(20), dpToPx(10));
         GradientDrawable saveBg = new GradientDrawable();
-        saveBg.setCornerRadius(dpToPx(12));
+        saveBg.setCornerRadius(0);
         saveBg.setColor(Color.parseColor("#D4A853"));
         saveBtn.setBackground(saveBg);
         LinearLayout.LayoutParams saveParams = new LinearLayout.LayoutParams(
@@ -389,6 +424,7 @@ public class FloatingPenService extends Service {
 
     private void togglePanel() {
         if (panelOpen) {
+            stopPenTransparencyTimer();
             closePanel();
         } else {
             openPanel();
@@ -401,6 +437,11 @@ public class FloatingPenService extends Service {
                 repositionPanel();
                 windowManager.addView(panelView, panelParams);
                 panelOpen = true;
+                // Refresh the reading context so the latest page is shown
+                sendBroadcast(new Intent("com.marginalia.app.REFRESH_CONTEXT"));
+                updateContextLine();
+                // Reset transparency timer when panel opens
+                startPenTransparencyTimer();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -416,6 +457,64 @@ public class FloatingPenService extends Service {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void startPenTransparencyTimer() {
+        // Remove any existing timer
+        if (penTransparencyRunnable != null) {
+            penHandler.removeCallbacks(penTransparencyRunnable);
+        }
+        // Set alpha to full opacity initially
+        penView.setAlpha(1.0f);
+        // Run after 5 seconds of inactivity
+        penTransparencyRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Gradually reduce transparency over 500ms
+                penView.setAlpha(0.3f);
+            }
+        };
+        penHandler.postDelayed(penTransparencyRunnable, 5000);
+    }
+
+    private void stopPenTransparencyTimer() {
+        if (penTransparencyRunnable != null) {
+            penHandler.removeCallbacks(penTransparencyRunnable);
+            penView.setAlpha(1.0f);
+            penTransparencyRunnable = null;
+        }
+    }
+
+    private void refreshContext() {
+        try {
+            sendBroadcast(new Intent("com.marginalia.app.REFRESH_CONTEXT"));
+        } catch (Exception ignored) {}
+    }
+
+    private void updateContextLine() {
+        if (contextView == null) return;
+        String json = ReadingContextService.getLastContextJson();
+        if (json == null || json.isEmpty()) {
+            contextView.setText("");
+            return;
+        }
+        try {
+            JSONObject o = new JSONObject(json);
+            String title = o.optString("title", "");
+            String page = o.optString("page", "");
+            String app = o.optString("app", "");
+            StringBuilder sb = new StringBuilder();
+            if (!title.isEmpty()) sb.append("Reading: ").append(title);
+            if (!page.isEmpty()) {
+                if (sb.length() > 0) sb.append(" · ");
+                sb.append("Page ").append(page);
+            }
+            if (!app.isEmpty()) {
+                if (sb.length() > 0) sb.append(" · ");
+                sb.append(app);
+            }
+            contextView.setText(sb.toString().trim());
+        } catch (Exception ignored) {}
     }
 
     private void removeViews() {

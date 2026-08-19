@@ -1,7 +1,7 @@
 {
-  "versionCode": 15,
-  "versionName": "1.6.7",
-  "apkUrl": "Marginalia-1.6.7.apk",
+  "versionCode": 17,
+  "versionName": "1.6.9",
+  "apkUrl": "Marginalia-1.6.9.apk",
   "notes": [
     "Settings redesigned like a modern app: grouped sections (General, Storage, Support) with tidy rows and clear descriptions.",
     "Every screen shows its name in the top bar, so you always know where you are, with a back arrow that appears when needed.",
@@ -11,7 +11,13 @@
     "Categories open on their own dedicated page.",
     "Fixed the crash when turning off 'Show the floating pen'.",
     "Select text in any PDF, tap 'Note down', and file the line in a category.",
-    "Loading screen on open, and the app always loads the newest version when online."
+    "Loading screen on open, and the app always loads the newest version when online.",
+    "Account created and signed-in now show a popup confirmation instead of just a toast.",
+    "Capture modal auto-fills book/author/page from the reading context, auto-links to the active session.",
+    "Floating pen panel shows the current reading page title and page number.",
+    "Android: ReadingContextService captures foreground app context; MainActivity injects it into the WebView.",
+    "Margin notes indicator: pages with notes show a • marker; tapping filters the note list to that page.",
+    "Book timeline page filtering: review and list views now filter notes by page number. Go back clears the filter."
   ],
   "minVersionCode": 1
 }

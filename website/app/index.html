@@ -18,7 +18,7 @@
       --ac: #d4a853; --ac2: rgba(212,168,83,.14); --ac3: rgba(212,168,83,.28);
       --bd: rgba(255,255,255,.07); --bd2: rgba(255,255,255,.11);
       --danger: #e05545;
-      --r: 12px; --r2: 16px;
+      --r: 0; --r2: 0;
       --ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       --wr: Georgia, 'Times New Roman', serif;
       --safe-b: env(safe-area-inset-bottom, 0px);
@@ -90,7 +90,7 @@
     .chips-wrap { position: relative; }
     .chips-more { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; padding-left: 28px; padding-right: 6px; color: var(--ac); font-size: 14px; pointer-events: none; background: linear-gradient(90deg, rgba(17,17,17,0), var(--bg) 55%); }
     .chips-more.hidden { display: none; }
-    .chip { flex: none; padding: 9px 16px; border-radius: 999px; font-size: 13px; color: var(--tx2); border: 1px solid var(--bd2); white-space: nowrap; transition: all .2s; font-weight: 500; }
+    .chip { flex: none; padding: 9px 16px; border-radius: 0; font-size: 13px; color: var(--tx2); border: 1px solid var(--bd2); white-space: nowrap; transition: all .2s; font-weight: 500; }
     .chip i { font-size: 11px; color: var(--ac); opacity: .75; }
     .chip.on { color: #111; background: var(--ac); border-color: var(--ac); font-weight: 600; }
     .chip.on i { color: #111; opacity: 1; }
@@ -102,7 +102,7 @@
     .active-banner .ab-end { background: var(--ac); color: #111; font-weight: 600; font-size: 12px; padding: 8px 14px; border-radius: 8px; }
 
     /* ---- NOTE CARDS ---- */
-    .card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 14px; padding: 16px 18px; cursor: pointer; transition: background .15s; }
+    .card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 0; padding: 16px 18px; cursor: pointer; transition: background .15s; }
     .card:active { background: var(--bg3); }
     .c-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
     .c-cat { font-size: 10px; text-transform: uppercase; letter-spacing: 1.1px; color: var(--ac); font-weight: 600; }
@@ -162,7 +162,7 @@
     #main { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
     /* ---- QUICK CAPTURE PANEL ---- */
-    #panel { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg2); border-top: 1px solid var(--bd); border-radius: 22px 22px 0 0; z-index: 45; transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); max-height: 60vh; display: flex; flex-direction: column; padding: 20px 18px; padding-bottom: calc(20px + var(--safe-b)); box-shadow: 0 -4px 30px rgba(0,0,0,.4); }
+    #panel { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg2); border-top: 1px solid var(--bd); border-radius: 0; z-index: 45; transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); max-height: 60vh; display: flex; flex-direction: column; padding: 20px 18px; padding-bottom: calc(20px + var(--safe-b)); box-shadow: 0 -4px 30px rgba(0,0,0,.4); }
     #panel.show { transform: none; }
     .ph { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .ph-title { font-size: 15px; font-weight: 600; }
@@ -181,7 +181,7 @@
     /* ---- MODAL ---- */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
     .modal.show { display: flex; }
-    .modal-card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 18px; padding: 26px 24px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+    .modal-card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 0; padding: 26px 24px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
     .modal-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .modal-card p { color: var(--tx2); font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
     .modal-card input { width: 100%; background: var(--bg3); border: 1px solid var(--bd); border-radius: 10px; padding: 12px 14px; font-size: 14px; margin-bottom: 10px; transition: border-color .2s; }
@@ -239,7 +239,7 @@
     .set-menu { display: flex; flex-direction: column; gap: 8px; }
     .set-group { margin-bottom: 20px; }
     .set-group-h { font-size: 12px; font-weight: 600; letter-spacing: .6px; color: var(--tx3); text-transform: uppercase; margin: 0 4px 8px; }
-    .set-card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 14px; overflow: hidden; }
+    .set-card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 0; overflow: hidden; }
     .set-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 15px 16px; color: var(--tx); font-size: 15px; text-align: left; cursor: pointer; }
     .set-row:active { background: var(--bg3); }
     .set-row > i:first-child { width: 22px; text-align: center; color: var(--ac); font-size: 15px; flex: none; }
@@ -284,6 +284,10 @@
     /* ---- TEXT CAPTURE ---- */
     .mt-block { background: var(--bg3); border: 1px solid var(--bd); border-radius: 10px; padding: 14px; font-family: var(--wr); font-size: 14px; line-height: 1.6; color: var(--tx); margin-bottom: 14px; max-height: 28vh; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
     .mt-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--ac); font-weight: 600; margin-bottom: 8px; }
+    .mt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .mt-grid input { margin-bottom: 0; }
+    .mt-link { background: rgba(212,168,83,.1); border: 1px solid rgba(212,168,83,.3); color: #e2c287; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; margin-bottom: 12px; word-break: break-word; }
+    .mt-link i { color: var(--ac); margin-right: 6px; }
 
     @media (min-width: 600px) {
       #sidebar { width: 320px; }
@@ -532,6 +536,13 @@
       <h2><i class="fa-solid fa-pen-nib" aria-hidden="true"></i>&nbsp; Note this down</h2>
       <p>Save this line into Marginalia.</p>
       <div class="mt-block" id="mt-text"></div>
+      <div class="mt-link" id="mt-link" hidden></div>
+      <label class="mt-label">Book</label>
+      <div class="mt-grid">
+        <input id="mt-book" placeholder="Book title" />
+        <input id="mt-author" placeholder="Author" />
+      </div>
+      <input id="mt-page" placeholder="Page (optional)" />
       <label class="mt-label">Category</label>
       <div class="chips" id="mt-chips"></div>
       <div class="modal-actions">
@@ -556,6 +567,16 @@
       <button class="btn btn-p" id="auth-submit" style="width:100%">Sign in</button>
       <button class="btn btn-g" id="auth-toggle" style="width:100%;margin-top:8px">Create account</button>
       <button class="btn btn-ghost" id="auth-close" style="width:100%;margin-top:8px">Cancel</button>
+    </div>
+  </div>
+
+  <!-- generic popup modal (account created, signed in, etc.) -->
+  <div class="modal" id="modal-pop">
+    <div class="modal-card" style="text-align:center">
+      <div class="auth-badge"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
+      <h2 id="pop-title" style="justify-content:center">Done</h2>
+      <p id="pop-msg" style="text-align:center"></p>
+      <button class="btn btn-p" id="pop-ok" style="width:100%">OK</button>
     </div>
   </div>
 

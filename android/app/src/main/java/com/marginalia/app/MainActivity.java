@@ -31,7 +31,7 @@ import java.io.File;
 public class MainActivity extends Activity {
 
     WebView webView;
-    private static final String APP_URL = "https://nishant007-afk.github.io/marginalia/app/?v=166";
+    private static final String APP_URL = "https://nishant007-afk.github.io/marginalia/app/?v=167";
     private static final int OVERLAY_PERMISSION_REQ = 1001;
     private static final int NOTIFICATION_PERMISSION_REQ = 1002;
     private static final int INSTALL_PERMISSION_REQ = 1003;
@@ -93,12 +93,13 @@ public class MainActivity extends Activity {
                 return false;
             }
 
-            @Override
-            public void onPageFinished(WebView view, String url) {
+@Override
+public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 injectFloatingPen();
                 hideInAppPen();
                 injectPendingText();
+                injectReadingContext();
             }
 
             @Override
@@ -174,6 +175,15 @@ public class MainActivity extends Activity {
         try {
             final String js = "window.__pendingText = '" + escapeJs(t) + "'; try { window.__showTextCapture && window.__showTextCapture(); } catch (e) {}";
             webView.postDelayed(() -> webView.evaluateJavascript(js, null), 1200);
+        } catch (Exception ignored) {}
+    }
+
+    private void injectReadingContext() {
+        if (webView == null) return;
+        final String ctx = ReadingContextService.getLastContextJson();
+        if (ctx == null || ctx.isEmpty()) return;
+        try {
+            webView.evaluateJavascript("window.__readingContext = " + ctx + ";", null);
         } catch (Exception ignored) {}
     }
 
@@ -289,6 +299,11 @@ private void stopFloatingPen() {
             } catch (Exception e) {
                 return "";
             }
+        }
+
+        @JavascriptInterface
+        public String getReadingContext() {
+            return ReadingContextService.getLastContextJson();
         }
 
         @JavascriptInterface

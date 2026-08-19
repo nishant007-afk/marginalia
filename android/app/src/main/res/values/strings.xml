@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">Marginalia</string>
     <string name="note_down">Note down</string>
+    <string name="reading_context_label">Marginalia reading context</string>
+    <string name="reading_context_desc">Lets the floating pen remember which page and book you are reading, so your notes are automatically linked to the text you were on.</string>
 </resources>

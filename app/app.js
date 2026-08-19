@@ -3,13 +3,11 @@
 /* ================================================================ CONFIG */
 const CATEGORIES = {
   observe:{label:'Observe',icon:'<i class="fa-solid fa-eye" aria-hidden="true"></i>',prompt:'What did you notice?'},
-  image:{label:'Images',icon:'<i class="fa-solid fa-palette" aria-hidden="true"></i>',prompt:'What image stayed with you?'},
   connection:{label:'Connections',icon:'<i class="fa-solid fa-link" aria-hidden="true"></i>',prompt:'What does this remind you of?'},
-  feeling:{label:'Feelings',icon:'<i class="fa-solid fa-heart" aria-hidden="true"></i>',prompt:'What did this make you feel?'},
-  idea:{label:'Ideas',icon:'<i class="fa-solid fa-lightbulb" aria-hidden="true"></i>',prompt:'What thought came to you?'},
+  thought:{label:'Thoughts',icon:'<i class="fa-solid fa-brain" aria-hidden="true"></i>',prompt:'What thought came to you?'},
   line:{label:'Lines',icon:'<i class="fa-solid fa-pen" aria-hidden="true"></i>',prompt:'A line of your own?'},
-  draft:{label:'Drafts',icon:'<i class="fa-solid fa-note-sticky" aria-hidden="true"></i>',prompt:'Write a little.'},
-  poem:{label:'Poems',icon:'<i class="fa-solid fa-feather" aria-hidden="true"></i>',prompt:'A finished piece.'}
+  quote:{label:'Quotes',icon:'<i class="fa-solid fa-quote" aria-hidden="true"></i>',prompt:'A favorite line or passage'},
+  draft:{label:'Drafts',icon:'<i class="fa-solid fa-note-sticky" aria-hidden="true"></i>',prompt:'Write a little.'}
 };
 const APP_VERSION = '1.4.0';
 
@@ -108,7 +106,7 @@ function toast(msg) {
 }
 
 /* ============================================================ STATE */
-let state = { view:'all', catFilter:'all', catView:null, search:'', editingId:null, activeSession:null };
+let state = { view:'all', catFilter:'all', catView:null, search:'', editingId:null, activeSession:null, pageFilter:null };
 
 /* ============================================================ NAVIGATION */
 function switchView(name) {
@@ -160,6 +158,7 @@ function goBack() {
   if (state.view.startsWith('set-')) { switchView('settings'); return true; }
   if (state.catView) { state.catView = null; renderCategories(); switchView('categories'); return true; }
   if (state.view !== 'all') { switchView('all'); return true; }
+  state.pageFilter = null;
   return false;
 }
 window.__dispatchBack = goBack;
@@ -219,7 +218,11 @@ async function renderList() {
   renderChips();
   renderActiveBanner();
   const list = $('#list');
-  const notes = await store.listNotes({ category: state.catFilter==='all'?undefined:state.catFilter, query: state.search||undefined });
+  let notes = await store.listNotes({ category: state.catFilter==='all'?undefined:state.catFilter, query: state.search||undefined });
+  // Filter by page if pageFilter is set
+  if (state.pageFilter) {
+    notes = notes.filter(n => n.page && n.page.trim() === state.pageFilter);
+  }
   list.innerHTML = '';
   if (!notes.length) {
     const ei = state.search ? '<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>' : '<i class="fa-solid fa-pen-nib" aria-hidden="true"></i>';
@@ -232,8 +235,11 @@ async function renderList() {
     const prev = notePreview(n);
     const src = n.sourceText ? '<div class="c-source">Source: '+esc(n.sourceText.slice(0,80))+'</div>' : '';
     const bookLine = n.book ? '<div class="c-meta"><i class="fa-solid fa-book" aria-hidden="true"></i> '+esc(n.book)+(n.page?' · p.'+esc(n.page):'')+'</div>' : '';
-    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc(catLabel)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(prev?'<div class="c-prev">'+esc(prev)+'</div>':'')+bookLine+src;
-    card.onclick = () => openEditor(n.id); list.appendChild(card);
+    const marginNote = n.page && n.page.trim() ? '<span class="margin-note" data-page="'+n.page+'">•</span>' : '';
+    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc(catLabel)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(prev?'<div class="c-prev">'+esc(prev)+'</div>':'')+bookLine+src+marginNote;
+    card.onclick = () => openEditor(n.id);
+    const mn = card.querySelector('.margin-note');
+    if (mn) mn.onclick = (e) => { e.stopPropagation(); filterNotesByPage(n.page, n.book); };
   }
   const stats = await store.getStats();
   $('#sb-stats').textContent = stats.total+' note'+(stats.total===1?'':'s');
@@ -351,16 +357,23 @@ pen.addEventListener('click', (e) => { if (penMoved>5) return; if ($('#panel').c
 async function renderReview() {
   const activeChip = $('#rf .chip.on'); const range = activeChip ? activeChip.dataset.range : 'older';
   const all = await store.listNotes({}); const now = Date.now(); const day = 86400000;
-  let filtered;
-  if (range==='older') filtered = all.filter(n => new Date(n.updatedAt||n.createdAt).getTime() < now-30*day);
-  else if (range==='week') filtered = all.filter(n => new Date(n.updatedAt||n.createdAt).getTime() >= now-7*day);
-  else filtered = all.filter(n => new Date(n.updatedAt||n.createdAt).getTime() >= now-30*day);
+  let filtered = all.filter(n => {
+    const withinRange = (
+      (range==='older' ? new Date(n.updatedAt||n.createdAt).getTime() < now-30*day) :
+      (range==='week' ? new Date(n.updatedAt||n.createdAt).getTime() >= now-7*day) :
+      new Date(n.updatedAt||n.createdAt).getTime() >= now-30*day)
+    );
+    return withinRange && (!state.pageFilter || (n.page && n.page.trim() === state.pageFilter));
+  });
   const list = $('#rl'); list.innerHTML = '';
   if (!filtered.length) { list.innerHTML='<div class="empty"><div class="ei"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></div>Nothing in this range yet.</div>'; return; }
   for (const n of filtered) {
     const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='10px';
     const src = n.sourceText ? '<div class="c-source">Source: '+esc(n.sourceText.slice(0,60))+'</div>' : '';
-    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc((CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(notePreview(n)?'<div class="c-prev">'+esc(notePreview(n))+'</div>':'')+src;
+    // Margin notes indicator
+    const hasPage = n.page && n.page.trim();
+    const marginNote = hasPage ? '<span class="margin-note" data-page="'+n.page+'">•</span>' : '';
+    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc((CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(notePreview(n)?'<div class="c-prev">'+esc(notePreview(n))+'</div>':'')+src+marginNote;
     card.onclick = () => openEditor(n.id); list.appendChild(card);
   }
 }
@@ -464,11 +477,41 @@ document.addEventListener('keydown', (e) => {
 /* ---- Text capture from PDF / text selection ---- */
 window.__pendingText = '';
 let mtCategory = 'observe';
+function refreshReadingContext() {
+  if (window.AndroidBridge && window.AndroidBridge.getReadingContext) {
+    try {
+      const s = window.AndroidBridge.getReadingContext();
+      if (s) window.__readingContext = JSON.parse(s);
+    } catch (e) {}
+  }
+}
 window.__showTextCapture = function () {
   const text = (window.__pendingText || '').trim();
   if (!text) return;
   mtCategory = 'observe';
   $('#mt-text').textContent = text;
+  refreshReadingContext();
+  const ctx = window.__readingContext || null;
+  const active = store && store.getActiveSession();
+  let book = (ctx && (ctx.book || ctx.title)) || '';
+  let author = (ctx && ctx.author) || '';
+  let page = (ctx && ctx.page) || '';
+  if (!book && active && active.book) { book = active.book; author = author || (active.author || ''); }
+  $('#mt-book').value = book;
+  $('#mt-author').value = author;
+  $('#mt-page').value = page;
+  const linkEl = $('#mt-link');
+  const parts = [];
+  if (book) parts.push('<i class="fa-solid fa-book"></i>' + esc(book));
+  if (author) parts.push(esc(author));
+  if (page) parts.push('<i class="fa-solid fa-hashtag"></i>' + esc(page));
+  if (active && active.book && !book && !author) parts.push('Linked to reading session: ' + esc(active.book));
+  if (parts.length) { linkEl.innerHTML = parts.join(' · '); linkEl.hidden = false; }
+  else linkEl.hidden = true;
+  // Show "highlighted text" banner above the capture area
+  const highlightEl = $('#mt-highlight');
+  highlightEl.textContent = text ? 'Selected text: ' + esc(text.substring(0, 100)) : '';
+  highlightEl.hidden = !text;
   const chipsEl = $('#mt-chips'); chipsEl.innerHTML = '';
   for (const [k, c] of Object.entries(CATEGORIES)) {
     const b = document.createElement('button');
@@ -485,8 +528,17 @@ $('#mt-save').addEventListener('click', async () => {
   if (!text) return;
   closeModal('modal-text');
   window.__pendingText = '';
-  const note = await store.createNote({ category: mtCategory, content: text });
-  toast('Saved to Marginalia');
+  const active = store.getActiveSession();
+  const note = await store.createNote({
+    category: mtCategory,
+    content: text,
+    book: $('#mt-book').value.trim() || null,
+    author: $('#mt-author').value.trim() || null,
+    page: $('#mt-page').value.trim() || null,
+    sourceText: text,
+    sessionId: active ? active.id : null
+  });
+  toast('Saved to Marginalia' + (note.book ? ' · ' + note.book : ''));
   renderList();
   openEditor(note.id);
 });
@@ -517,7 +569,7 @@ function renderAuthSection() {
   }
 }
 function renderSettingsPage(name) {
-  if (name === 'set-account') { renderAuthSection(); renderSyncServerSection(); }
+  if (name === 'set-account') { renderAuthSection(); }
   else if (name === 'set-appearance') renderAppearance();
   else if (name === 'set-updates') renderAppVersion();
   else if (name === 'set-pen') renderPenToggle();
@@ -526,51 +578,19 @@ function renderSettingsPage(name) {
 $$('.set-row[data-set]').forEach(r => r.addEventListener('click', () => switchView('set-' + r.dataset.set)));
 $$('.set-back').forEach(b => b.addEventListener('click', () => switchView('settings')));
 
-/* ---- Sync server (optional custom Supabase project) ---- */
-function renderSyncServerSection() {
-  const status = $('#sync-server-status');
-  if (!status) return;
-  status.textContent = getStoredCreds() ? 'Using a custom server' : 'Using the built-in server';
-  const fields = $('#sync-server-fields');
-  if (fields) {
-    const open = fields.hidden === false;
-    const chevron = $('#sync-server-toggle i.fa-angle-down, #sync-server-toggle i.fa-angle-right');
-    if (chevron) chevron.className = open ? 'fa-solid fa-angle-up' : 'fa-solid fa-angle-down';
-  }
+/* ---- Generic popup (account created, signed in, etc.) ---- */
+function showPopup(title, msg) {
+
+/* ---- Generic popup (account created, signed in, etc.) ---- */
+function showPopup(title, msg) {
+  $('#pop-title').textContent = title;
+  $('#pop-msg').textContent = msg;
+  $('#modal-pop').classList.add('show');
+  updateBackButton();
 }
-$('#sync-server-toggle').addEventListener('click', () => {
-  const fields = $('#sync-server-fields');
-  fields.hidden = !fields.hidden;
-  if (!fields.hidden) {
-    const cfg = getSupabaseConfig();
-    $('#sync-url2').value = cfg.url || '';
-    $('#sync-key2').value = cfg.key || '';
-  }
-  renderSyncServerSection();
-});
-$('#sync-save2').addEventListener('click', () => {
-  const url = $('#sync-url2').value.trim();
-  const key = $('#sync-key2').value.trim();
-  if (!url || !key) { toast('Enter both the project URL and anon key'); return; }
-  localStorage.setItem(SYNC_CREDS_KEY, JSON.stringify({ url, key }));
-  initSupabase();
-  currentUser = null;
-  renderAuthSection();
-  renderSyncServerSection();
-  toast('Server saved. Sign in to test it.');
-});
-$('#sync-reset2').addEventListener('click', () => {
-  localStorage.removeItem(SYNC_CREDS_KEY);
-  initSupabase();
-  currentUser = null;
-  $('#sync-server-fields').hidden = true;
-  renderAuthSection();
-  renderSyncServerSection();
-  toast('Using the built-in server');
-});
-window.showAuthModal = () => { $('#auth-error').hidden = true; $('#modal-auth').classList.add('show'); updateBackButton(); };
+$('#pop-ok').addEventListener('click', () => closeModal('modal-pop'));
 window.closeModal = (id) => { document.getElementById(id).classList.remove('show'); updateBackButton(); };
-window.doSignOut = async () => { await signOut(); renderSettings(); renderTopbarAuth(); toast('Signed out'); };
+window.doSignOut = async () => { await signOut(); renderSettings(); renderTopbarAuth(); showPopup('Signed out', 'You\'re signed out. Your notes stay safe on this device and will sync again if you sign back in.'); };
 window.doSyncNow = async () => { if (!navigator.onLine) { toast('Offline. Will sync when connected.'); return; } toast('Syncing...'); await fullSync(); };
 
 /* ---- Appearance ---- */
@@ -636,6 +656,17 @@ function renderActiveBanner() {
     });
   } else {
     b.hidden = true;
+  }
+}
+
+function filterNotesByPage(page, book) {
+  state.pageFilter = page;
+  renderList();
+  renderReview();
+  const activeBanner = $('#active-banner');
+  if (activeBanner) {
+    activeBanner.innerHTML = '<span class="ab-book"><i class="fa-solid fa-book-open" aria-hidden="true"></i>&nbsp; Reading: ' + esc(book) + '</span>';
+    activeBanner.hidden = false;
   }
 }
 
@@ -727,16 +758,16 @@ $('#auth-submit').addEventListener('click', async () => {
   try {
     if (authMode==='signin') {
       await signIn(email,pass);
-      toast('Signed in');
       closeModal('modal-auth'); switchView('settings');
+      showPopup('Signed in', 'Signed in as ' + email + '. Your notes now sync across devices.');
     } else {
       const r = await signUp(email,pass);
+      closeModal('modal-auth');
       if (!r.session) {
-        toast('Account created! Check your email to confirm.');
-        closeModal('modal-auth');
+        showPopup('Account created', 'Check your inbox (' + email + ') and click the confirmation link, then sign in. Until then, notes stay on this device.');
       } else {
-        toast('Account created and signed in');
-        closeModal('modal-auth'); switchView('settings');
+        switchView('settings');
+        showPopup('Account created', 'You\'re signed in as ' + email + '. Your notes now sync across devices.');
       }
     }
   } catch (e) {
@@ -1045,10 +1076,19 @@ if ('serviceWorker' in navigator) {
 
 /* ============================================================ ANDROID BRIDGE */
 document.addEventListener('android-save-note', async (e) => {
-  const { category, content } = e.detail || {};
-  if (content) {
-    await store.createNote({ category: category || 'observe', content });
-    toast('Saved from pen');
+  const d = e.detail || {};
+  if (d.content) {
+    const active = store.getActiveSession();
+    const note = await store.createNote({
+      category: d.category || 'observe',
+      content: d.content,
+      book: d.book || null,
+      author: d.author || null,
+      page: d.page || null,
+      sourceText: d.sourceText || d.content,
+      sessionId: d.sessionId || (active ? active.id : null)
+    });
+    toast('Saved from pen' + (note.book ? ' · ' + note.book : ''));
     renderList();
   }
 });

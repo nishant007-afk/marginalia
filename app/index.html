@@ -232,6 +232,15 @@
     .set-ver strong { color: var(--tx); }
     .crash-box { font-size: 11.5px; color: var(--tx3); margin-top: 10px; line-height: 1.5; background: var(--bg3); border: 1px solid var(--bd); border-radius: 10px; padding: 10px; white-space: pre-wrap; word-break: break-all; display: none; }
 
+    /* ---- SPLASH LOADER ---- */
+    #splash { position: fixed; inset: 0; z-index: 400; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity .35s ease; }
+    #splash.hide { opacity: 0; pointer-events: none; }
+    #splash .sp-logo { width: 72px; height: 72px; border-radius: 20px; background: var(--ac); color: #111; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(212,168,83,.35); animation: spPulse 1.6s ease-in-out infinite; }
+    #splash .sp-logo svg { width: 34px; height: 34px; }
+    #splash .sp-name { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+    #splash .sp-sub { font-size: 12.5px; color: var(--tx3); }
+    @keyframes spPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.94); opacity: .85; } }
+
     @media (min-width: 600px) {
       #sidebar { width: 320px; }
       .cat-grid { grid-template-columns: repeat(3, 1fr); }
@@ -239,6 +248,13 @@
   </style>
 </head>
 <body>
+  <!-- splash loader -->
+  <div id="splash">
+    <div class="sp-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>
+    <div class="sp-name">Marginalia</div>
+    <div class="sp-sub">opening your notes</div>
+  </div>
+
   <!-- install bar -->
   <div id="install-bar" hidden><span id="install-text"></span><button id="btn-install" class="install-btn">Install</button></div>
 

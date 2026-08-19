@@ -901,6 +901,8 @@ document.addEventListener('android-save-note', async (e) => {
 
 /* ============================================================ INIT */
 (async function boot() {
+  function hideSplash() { const s = document.getElementById('splash'); if (s) s.classList.add('hide'); }
+  setTimeout(hideSplash, 5000);
   if (window.AndroidBridge) {
     document.body.classList.add('android');
     // Keep the in-page pen and panel elements in the DOM (other code still
@@ -911,6 +913,7 @@ document.addEventListener('android-save-note', async (e) => {
     if (panelEl) panelEl.style.display = 'none';
   }
   initSupabase(); await initStore(); await getSessionUser();
+  if (!store) setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
   renderList(); state.activeSession = await store.getActiveSession();
   updateSyncDot();
   renderAppVersion();
@@ -918,4 +921,5 @@ document.addEventListener('android-save-note', async (e) => {
   renderActiveBanner();
   updateBackButton();
   if (navigator.onLine && currentUser) flushSyncQueue();
+  hideSplash();
 })();

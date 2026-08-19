@@ -1,4 +1,4 @@
-const CACHE = 'marginalia-v10';
+const CACHE = 'marginalia-v11';
 const STATIC_ASSETS = [
   './', './index.html', './app.js', './store.js',
   './manifest.webmanifest', './favicon.png',
@@ -55,8 +55,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // App code: network first, cache fallback, update cache in the background.
-  if (ALWAYS_FRESH(url.pathname)) {
+  // App code and page navigations: network first, cache fallback, update cache
+  // in the background. A navigation request is the main document (index.html),
+  // which must never stay stuck on an old cached copy.
+  if (e.request.mode === 'navigate' || ALWAYS_FRESH(url.pathname)) {
     e.respondWith(
       fetch(e.request).then(resp => {
         if (resp && resp.ok && e.request.method === 'GET') {

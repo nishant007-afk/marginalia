@@ -1,17 +1,15 @@
 {
-  "versionCode": 13,
-  "versionName": "1.6.5",
-  "apkUrl": "Marginalia-1.6.5.apk",
+  "versionCode": 14,
+  "versionName": "1.6.6",
+  "apkUrl": "Marginalia-1.6.6.apk",
   "notes": [
-    "Fixed navigation: the back button, menus, and panels all respond correctly again.",
-    "The app always loads the newest version when online, so changes like the simplified Settings arrive immediately instead of staying stuck on old cached screens.",
-    "Only one pen, guaranteed: the in-page pen is hidden on every load and the floating pen is the only one on screen.",
-    "The floating pen's quick capture now fits properly: its category chips scroll so none of them are cut off.",
-    "Tapping the floating pen reliably opens the quick capture popup.",
-    "Cleaner Settings, arranged into tidy cards: Account, Floating pen, Updates, Data, and Troubleshooting.",
-    "A single Check for update button with your current app version below it (the old sync-server fields and web-update check are gone).",
-    "Sessions start instantly, even offline. Enter book and author, tap Start (or press Enter), and a Reading banner appears while the session runs.",
-    "Notes show relative dates, a search icon was added, and empty screens are friendlier."
+    "A loading screen now shows while the app opens, then disappears when your notes are ready.",
+    "Fixed stale content: the app now always loads the newest version when online, so the new clean Settings (single Check for update, no sync server) are guaranteed to appear. You do not need to clear anything manually.",
+    "The top bar now shows Sign in when you are logged out, and your profile picture once you are signed in.",
+    "The + button and browsing categories now open note editors reliably.",
+    "Only one floating pen appears, and tapping it opens the quick capture popup whose category chips scroll so nothing is cut off.",
+    "Sessions start instantly, even offline. Press Enter or tap Start after entering book and author, and a Reading banner appears.",
+    "A cleaner interface throughout: relative dates, a search icon, friendlier empty screens, and Settings arranged into tidy cards."
   ],
   "minVersionCode": 1
 }

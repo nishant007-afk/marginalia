@@ -31,7 +31,7 @@ import java.io.File;
 public class MainActivity extends Activity {
 
     WebView webView;
-    private static final String APP_URL = "https://nishant007-afk.github.io/marginalia/app/";
+    private static final String APP_URL = "https://nishant007-afk.github.io/marginalia/app/?v=166";
     private static final int OVERLAY_PERMISSION_REQ = 1001;
     private static final int NOTIFICATION_PERMISSION_REQ = 1002;
     private static final int INSTALL_PERMISSION_REQ = 1003;

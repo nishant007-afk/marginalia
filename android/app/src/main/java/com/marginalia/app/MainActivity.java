@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
 
     private long lastDownloadId = -1;
     private boolean pendingInstall = false;
+    private String pendingText = null;
     private static final String PEN_PREFS = "pen_prefs";
     private static final String PEN_ENABLED_KEY = "pen_enabled";
 
@@ -97,6 +98,7 @@ public class MainActivity extends Activity {
                 super.onPageFinished(view, url);
                 injectFloatingPen();
                 hideInAppPen();
+                injectPendingText();
             }
 
             @Override
@@ -126,6 +128,7 @@ public class MainActivity extends Activity {
             // prevent the app from launching.
         }
         webView.loadUrl(APP_URL);
+        pendingText = getIntent().getStringExtra("pending_selected_text");
 
         // Store reference for FloatingPenService
         MarginaliaApp.activity = this;
@@ -162,6 +165,16 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
             startFloatingPen();
         }
+    }
+
+    private void injectPendingText() {
+        if (webView == null || pendingText == null) return;
+        final String t = pendingText;
+        pendingText = null;
+        try {
+            final String js = "window.__pendingText = '" + escapeJs(t) + "'; try { window.__showTextCapture && window.__showTextCapture(); } catch (e) {}";
+            webView.postDelayed(() -> webView.evaluateJavascript(js, null), 1200);
+        } catch (Exception ignored) {}
     }
 
     // The web app contains its own in-page pen and quick-capture panel. Inside
@@ -227,7 +240,7 @@ private void stopFloatingPen() {
         @JavascriptInterface
         public void setPenEnabled(boolean enabled) {
             runOnUiThread(() -> {
-                setPenEnabled(enabled);
+                MainActivity.this.setPenEnabled(enabled);
                 if (enabled) {
                     injectFloatingPen();
                 } else {

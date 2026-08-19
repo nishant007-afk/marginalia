@@ -1,15 +1,17 @@
 {
-  "versionCode": 14,
-  "versionName": "1.6.6",
-  "apkUrl": "Marginalia-1.6.6.apk",
+  "versionCode": 15,
+  "versionName": "1.6.7",
+  "apkUrl": "Marginalia-1.6.7.apk",
   "notes": [
-    "A loading screen now shows while the app opens, then disappears when your notes are ready.",
-    "Fixed stale content: the app now always loads the newest version when online, so the new clean Settings (single Check for update, no sync server) are guaranteed to appear. You do not need to clear anything manually.",
-    "The top bar now shows Sign in when you are logged out, and your profile picture once you are signed in.",
-    "The + button and browsing categories now open note editors reliably.",
-    "Only one floating pen appears, and tapping it opens the quick capture popup whose category chips scroll so nothing is cut off.",
-    "Sessions start instantly, even offline. Press Enter or tap Start after entering book and author, and a Reading banner appears.",
-    "A cleaner interface throughout: relative dates, a search icon, friendlier empty screens, and Settings arranged into tidy cards."
+    "Fixed the crash when turning off 'Show the floating pen' in Settings.",
+    "New: select text in any PDF or app, tap 'Note down' in the text toolbar, and the selected line lands in Marginalia for you to file under a category.",
+    "Completely redesigned to feel clean and professional, inspired by notebook apps: calm dark surfaces, tidy note cards with category, title and a preview, and clear typography.",
+    "Easier navigation with a bottom bar: All, Categories, Review, Sessions, Settings. The active tab is highlighted.",
+    "Category chips now show their icon and a clearer selected state.",
+    "Only one floating pen appears, and its quick-capture popup fits all categories.",
+    "A loading screen appears while the app opens, then fades away when your notes are ready.",
+    "The app always loads the newest version when online, so updates appear immediately.",
+    "Sessions start instantly, even offline. Press Enter or tap Start after entering book and author, and a Reading banner appears."
   ],
   "minVersionCode": 1
 }

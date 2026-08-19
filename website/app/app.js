@@ -115,6 +115,7 @@ function switchView(name) {
   state.view = name;
   $$('.view').forEach(v => v.classList.toggle('show', v.id === 'v-'+name));
   $$('.sb-btn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view===name));
+  $$('#tabbar .tab').forEach(t => t.classList.toggle('active', t.dataset.view===name));
   closeSidebar();
   if (name==='all') renderList();
   else if (name==='categories') renderCategories();
@@ -170,8 +171,8 @@ async function showCategoryNotes(cat) {
   $('#cat-back').onclick = () => { state.catView = null; renderCategories(); };
   if (!notes.length) { el.innerHTML += '<div class="empty"><div class="ei"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></div>No notes in this category yet.</div>'; return; }
   for (const n of notes) {
-    const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='8px';
-    card.innerHTML = '<div class="card-top"><span class="ct">'+esc(noteTitle(n))+'</span><span class="cd">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div>'+(notePreview(n)?'<div class="cp">'+esc(notePreview(n))+'</div>':'')+(n.book?'<div class="cm">'+esc(n.book)+'</div>':'');
+    const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='10px';
+    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc((CATEGORIES[cat]&&CATEGORIES[cat].label)||cat)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(notePreview(n)?'<div class="c-prev">'+esc(notePreview(n))+'</div>':'')+(n.book?'<div class="c-meta"><i class="fa-solid fa-book" aria-hidden="true"></i> '+esc(n.book)+'</div>':'');
     card.onclick = () => openEditor(n.id); el.appendChild(card);
   }
   updateBackButton();
@@ -180,12 +181,12 @@ async function showCategoryNotes(cat) {
 /* ============================================================ NOTE LIST */
 function renderChips() {
   const el = $('#chips'); el.innerHTML = '';
-  const add = (key,label) => {
+  const add = (key,label,icon) => {
     const b = document.createElement('button'); b.className = 'chip'+(state.catFilter===key?' on':'');
-    b.textContent = label; b.onclick = () => { state.catFilter=key; renderChips(); renderList(); }; el.appendChild(b);
+    b.innerHTML = (icon ? icon+'&nbsp;' : '')+esc(label); b.onclick = () => { state.catFilter=key; renderChips(); renderList(); }; el.appendChild(b);
   };
   add('all','All');
-  for (const [k,c] of Object.entries(CATEGORIES)) add(k,c.label);
+  for (const [k,c] of Object.entries(CATEGORIES)) add(k,c.label,c.icon);
   updateChipsMore();
 }
 async function renderList() {
@@ -203,9 +204,9 @@ async function renderList() {
     const card = document.createElement('div'); card.className = 'card';
     const catLabel = (CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category;
     const prev = notePreview(n);
-    const src = n.sourceText ? '<div class="cs">Source: '+esc(n.sourceText.slice(0,80))+'</div>' : '';
-    const bookLine = n.book ? '<div class="cm">'+esc(n.book)+(n.page?' · p.'+esc(n.page):'')+'</div>' : '';
-    card.innerHTML = '<div class="card-top"><span class="cc">'+esc(catLabel)+'</span><span class="ct">'+esc(noteTitle(n))+'</span><span class="cd">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div>'+(prev?'<div class="cp">'+esc(prev)+'</div>':'')+bookLine+src;
+    const src = n.sourceText ? '<div class="c-source">Source: '+esc(n.sourceText.slice(0,80))+'</div>' : '';
+    const bookLine = n.book ? '<div class="c-meta"><i class="fa-solid fa-book" aria-hidden="true"></i> '+esc(n.book)+(n.page?' · p.'+esc(n.page):'')+'</div>' : '';
+    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc(catLabel)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(prev?'<div class="c-prev">'+esc(prev)+'</div>':'')+bookLine+src;
     card.onclick = () => openEditor(n.id); list.appendChild(card);
   }
   const stats = await store.getStats();
@@ -331,9 +332,9 @@ async function renderReview() {
   const list = $('#rl'); list.innerHTML = '';
   if (!filtered.length) { list.innerHTML='<div class="empty"><div class="ei"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></div>Nothing in this range yet.</div>'; return; }
   for (const n of filtered) {
-    const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='8px';
-    const src = n.sourceText ? '<div class="cs">Source: '+esc(n.sourceText.slice(0,60))+'</div>' : '';
-    card.innerHTML = '<div class="card-top"><span class="cc">'+esc((CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category)+'</span><span class="ct">'+esc(noteTitle(n))+'</span><span class="cd">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div>'+(notePreview(n)?'<div class="cp">'+esc(notePreview(n))+'</div>':'')+src;
+    const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='10px';
+    const src = n.sourceText ? '<div class="c-source">Source: '+esc(n.sourceText.slice(0,60))+'</div>' : '';
+    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc((CATEGORIES[n.category]&&CATEGORIES[n.category].label)||n.category)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(notePreview(n)?'<div class="c-prev">'+esc(notePreview(n))+'</div>':'')+src;
     card.onclick = () => openEditor(n.id); list.appendChild(card);
   }
 }
@@ -370,9 +371,9 @@ async function renderSessions() {
   }
   for (const s of sessions) {
     const {notes} = await store.getSession(s.id);
-    const item = document.createElement('div'); item.className='card'; item.style.marginBottom='8px';
+    const item = document.createElement('div'); item.className='card session-card'; item.style.marginBottom='10px';
     const status = s.endedAt ? 'ended' : 'ongoing';
-    item.innerHTML = '<div class="card-top"><span class="ct">'+esc(s.book||'Reading session')+'</span>'+(s.author?'<span class="cc">'+esc(s.author)+'</span>':'')+'</div><div class="cm">'+fmtDate(s.startedAt)+' / '+status+' / '+notes.length+' note'+(notes.length===1?'':'s')+'</div>';
+    item.innerHTML = '<div class="c-top"><span class="c-cat">'+status+'</span><span class="c-date">'+fmtDate(s.startedAt)+'</span></div><div class="c-title">'+esc(s.book||'Reading session')+'</div>'+(s.author?'<div class="c-prev">'+esc(s.author)+'</div>':'')+'<div class="c-meta"><i class="fa-solid fa-file-lines" aria-hidden="true"></i> '+notes.length+' note'+(notes.length===1?'':'s')+'</div>';
     const actions = document.createElement('div');
     actions.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap';
     const isActive = state.activeSession && state.activeSession.id === s.id;
@@ -433,6 +434,39 @@ document.addEventListener('keydown', (e) => {
     if (t && (t.id === 'ms-book' || t.id === 'ms-author')) { e.preventDefault(); startSession(); }
   }
 });
+
+/* ---- Text capture from PDF / text selection ---- */
+window.__pendingText = '';
+let mtCategory = 'observe';
+window.__showTextCapture = function () {
+  const text = (window.__pendingText || '').trim();
+  if (!text) return;
+  mtCategory = 'observe';
+  $('#mt-text').textContent = text;
+  const chipsEl = $('#mt-chips'); chipsEl.innerHTML = '';
+  for (const [k, c] of Object.entries(CATEGORIES)) {
+    const b = document.createElement('button');
+    b.className = 'chip' + (k === 'observe' ? ' on' : '');
+    b.textContent = c.label;
+    b.onclick = () => { mtCategory = k; [...chipsEl.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); };
+    chipsEl.appendChild(b);
+  }
+  $('#modal-text').classList.add('show');
+  updateBackButton();
+};
+$('#mt-save').addEventListener('click', async () => {
+  const text = (window.__pendingText || '').trim();
+  if (!text) return;
+  closeModal('modal-text');
+  window.__pendingText = '';
+  const note = await store.createNote({ category: mtCategory, content: text });
+  toast('Saved to Marginalia');
+  renderList();
+  openEditor(note.id);
+});
+
+/* ---- Bottom navigation ---- */
+$$('#tabbar .tab').forEach(t => t.addEventListener('click', () => switchView(t.dataset.view)));
 
 /* ============================================================ SETTINGS */
 async function renderSettings() {

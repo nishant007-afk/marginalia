@@ -165,13 +165,14 @@ public class MainActivity extends Activity {
     }
 
     // The web app contains its own in-page pen and quick-capture panel. Inside
-    // the native app only the OS-level floating pen should exist, so remove the
-    // web ones from the page on every load (immune to any web cache staleness).
+    // the native app only the OS-level floating pen should exist, so hide the
+    // web ones on every load (immune to any web cache staleness). They are
+    // hidden, not removed, because the web app's own code still references them.
     private void hideInAppPen() {
         if (webView == null) return;
         try {
             webView.evaluateJavascript(
-                "(function(){var b=document.body;if(!b)return;b.classList.add('android');b.classList.add('appmode');var p=document.getElementById('pen');if(p)p.remove();var q=document.getElementById('panel');if(q)q.remove();})();",
+                "(function(){var b=document.body;if(!b)return;b.classList.add('android');b.classList.add('appmode');var p=document.getElementById('pen');if(p)p.style.display='none';var q=document.getElementById('panel');if(q)q.style.display='none';})();",
                 null);
         } catch (Exception ignored) {}
     }

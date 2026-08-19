@@ -196,7 +196,7 @@
     }
     .btn { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: all .15s; }
     .btn:active { transform: scale(.97); }
-    .btn-p { background: var(--ac); color: #111; }
+    .btn-p { background: var(--ac); color: #111; box-shadow: 0 2px 14px rgba(212,168,83,.22); }
     .btn-p:active { opacity: .85; }
     .btn-g { border: 1px solid var(--bd); color: var(--tx); }
     .btn-g:active { background: rgba(255,255,255,.04); }
@@ -220,6 +220,17 @@
     .cat-card:active { background: var(--bg3); transform: scale(.97); }
     .cat-card .cat-icon { font-size: 22px; margin-bottom: 10px; color: var(--ac); }
     .cat-card .cat-name { font-size: 12.5px; color: var(--tx2); font-weight: 500; }
+
+    /* ---- SETTINGS SECTIONS ---- */
+    .set-sec { background: var(--bg2); border: 1px solid var(--bd); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .set-h { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--ac); font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .set-h i { font-size: 12px; width: 16px; text-align: center; }
+    .switch-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; color: var(--tx); cursor: pointer; font-size: 14px; }
+    .switch-row input { width: 18px; height: 18px; accent-color: var(--ac); flex: none; }
+    .set-note { font-size: 12px; color: var(--tx3); line-height: 1.6; margin-top: 8px; }
+    .set-ver { font-size: 13px; color: var(--tx3); margin-top: 10px; }
+    .set-ver strong { color: var(--tx); }
+    .crash-box { font-size: 11.5px; color: var(--tx3); margin-top: 10px; line-height: 1.5; background: var(--bg3); border: 1px solid var(--bd); border-radius: 10px; padding: 10px; white-space: pre-wrap; word-break: break-all; display: none; }
 
     @media (min-width: 600px) {
       #sidebar { width: 320px; }
@@ -290,40 +301,40 @@
     </div>
     <div class="view" id="v-sessions">
       <div class="vh">Sessions</div>
-      <button class="btn btn-p" id="s-new" style="margin:12px 0">+ Start session</button>
+      <button class="btn btn-p" id="s-new" style="width:100%"><i class="fa-solid fa-book-open" aria-hidden="true"></i>&nbsp; Start session</button>
       <div id="sl"></div>
     </div>
     <div class="view" id="v-settings">
       <div class="vh">Settings</div>
-      <div style="margin-top:16px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ac);margin-bottom:10px;font-weight:600">Account</div>
+      <div class="set-sec">
+        <div class="set-h"><i class="fa-solid fa-user" aria-hidden="true"></i> Account</div>
         <div id="auth-section"></div>
       </div>
-      <div style="margin-top:20px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ac);margin-bottom:10px;font-weight:600">Floating pen</div>
-        <label style="display:flex;align-items:center;gap:12px;padding:10px 0;color:var(--tx);cursor:pointer">
-          <input type="checkbox" id="set-pen-toggle" style="width:18px;height:18px;accent-color:var(--ac)" />
-          <span style="font-size:14px">Show the floating pen</span>
+      <div class="set-sec">
+        <div class="set-h"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Floating pen</div>
+        <label class="switch-row">
+          <input type="checkbox" id="set-pen-toggle" />
+          <span>Show the floating pen</span>
         </label>
-        <div style="font-size:12px;color:var(--tx3);line-height:1.6">The pen starts automatically. If it ever causes a problem on your device, turn it off here and the app will stay fully open.</div>
+        <p class="set-note">The pen starts automatically. If it ever causes a problem on your device, turn it off here and the app will stay fully open.</p>
       </div>
-      <div style="margin-top:20px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ac);margin-bottom:10px;font-weight:600">Data</div>
+      <div class="set-sec" id="android-update-section">
+        <div class="set-h"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Updates</div>
+        <button class="btn btn-p" id="set-check-apk" style="width:100%"><i class="fa-solid fa-rotate" aria-hidden="true"></i>&nbsp; Check for update</button>
+        <p class="set-note" id="apk-update-status"></p>
+        <p class="set-ver">App version: <strong id="apk-ver-line"></strong></p>
+      </div>
+      <div class="set-sec">
+        <div class="set-h"><i class="fa-solid fa-database" aria-hidden="true"></i> Data</div>
         <button class="btn btn-g" id="set-export" style="margin-bottom:8px;width:100%">Export all (JSON)</button>
         <button class="btn btn-g" id="set-backup" style="margin-bottom:8px;width:100%">Create backup</button>
         <button class="btn btn-g" id="set-restore" style="width:100%">Restore backup</button>
       </div>
-      <div style="margin-top:20px" id="android-update-section">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ac);margin-bottom:10px;font-weight:600">Updates</div>
-        <button class="btn btn-p" id="set-check-apk" style="width:100%"><i class="fa-solid fa-rotate" aria-hidden="true"></i>&nbsp; Check for update</button>
-        <div style="font-size:12px;color:var(--tx3);margin-top:10px;line-height:1.6" id="apk-update-status"></div>
-        <div style="font-size:12.5px;color:var(--tx3);margin-top:10px">App version: <strong id="apk-ver-line"></strong></div>
-      </div>
-      <div style="margin-top:20px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ac);margin-bottom:10px;font-weight:600">Troubleshooting</div>
-        <button class="btn btn-g" id="set-view-crash" style="margin-bottom:8px;width:100%"><i class="fa-solid fa-bug" aria-hidden="true"></i>&nbsp; View crash log</button>
+      <div class="set-sec">
+        <div class="set-h"><i class="fa-solid fa-bug" aria-hidden="true"></i> Troubleshooting</div>
+        <button class="btn btn-g" id="set-view-crash" style="margin-bottom:8px;width:100%">View crash log</button>
         <button class="btn btn-g" id="set-clear-crash" style="width:100%">Clear crash log</button>
-        <div style="font-size:11.5px;color:var(--tx3);margin-top:10px;line-height:1.5;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:10px;white-space:pre-wrap;word-break:break-all;display:none" id="crash-log-box"></div>
+        <div class="crash-box" id="crash-log-box"></div>
       </div>
     </div>
   </div>

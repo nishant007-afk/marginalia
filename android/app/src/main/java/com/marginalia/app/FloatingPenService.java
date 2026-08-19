@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -262,7 +263,12 @@ public class FloatingPenService extends Service {
         prompt.setPadding(0, dpToPx(8), 0, dpToPx(4));
         root.addView(prompt);
 
-        // Category chips
+        // Category chips (horizontally scrollable so all of them fit)
+        HorizontalScrollView chipsScroll = new HorizontalScrollView(this);
+        chipsScroll.setHorizontalScrollBarEnabled(false);
+        chipsScroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        chipsScroll.setFillViewport(false);
+
         LinearLayout chipsRow = new LinearLayout(this);
         chipsRow.setOrientation(LinearLayout.HORIZONTAL);
         chipsRow.setPadding(0, dpToPx(4), 0, 0);
@@ -305,7 +311,8 @@ public class FloatingPenService extends Service {
             chipParams.setMarginEnd(dpToPx(6));
             chipsRow.addView(chip, chipParams);
         }
-        root.addView(chipsRow);
+        chipsScroll.addView(chipsRow);
+        root.addView(chipsScroll);
 
         // Text input
         EditText input = new EditText(this);

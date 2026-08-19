@@ -1,16 +1,17 @@
 {
-  "versionCode": 12,
-  "versionName": "1.6.4",
-  "apkUrl": "Marginalia-1.6.4.apk",
+  "versionCode": 13,
+  "versionName": "1.6.5",
+  "apkUrl": "Marginalia-1.6.5.apk",
   "notes": [
-    "Only one pen now: the floating pen. The in-page pen is stripped from the app on every load, so two pens can never appear again.",
-    "The floating pen now shows the same pen-nib mark as the app icon, sized to fit neatly inside the gold circle.",
-    "Starting a reading session always works now, even offline. Enter the book and author, tap Start (or press Enter), and an active Reading banner appears.",
-    "Reading sessions have End, Resume, and Delete controls, and notes attach to the session that is currently running.",
-    "Settings were simplified: the sync-server fields, the duplicate update checks, and the web app version line are gone. One Check for update button, with your app version below it.",
-    "Sign in button on the home screen when logged out, your profile picture when logged in.",
-    "A hint shows there are more categories to swipe through (All, Observe, Images, Connections, and more).",
-    "Cleaner interface: relative dates on every note, a search icon, and friendlier empty states throughout."
+    "Fixed navigation: the back button, menus, and panels all respond correctly again.",
+    "The app always loads the newest version when online, so changes like the simplified Settings arrive immediately instead of staying stuck on old cached screens.",
+    "Only one pen, guaranteed: the in-page pen is hidden on every load and the floating pen is the only one on screen.",
+    "The floating pen's quick capture now fits properly: its category chips scroll so none of them are cut off.",
+    "Tapping the floating pen reliably opens the quick capture popup.",
+    "Cleaner Settings, arranged into tidy cards: Account, Floating pen, Updates, Data, and Troubleshooting.",
+    "A single Check for update button with your current app version below it (the old sync-server fields and web-update check are gone).",
+    "Sessions start instantly, even offline. Enter book and author, tap Start (or press Enter), and a Reading banner appears while the session runs.",
+    "Notes show relative dates, a search icon was added, and empty screens are friendlier."
   ],
   "minVersionCode": 1
 }

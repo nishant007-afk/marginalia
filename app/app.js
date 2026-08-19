@@ -125,15 +125,17 @@ function switchView(name) {
 }
 
 function updateBackButton() {
+  const panel = $('#panel'), editor = $('#editor');
   const show = state.view !== 'all' || !!state.catView || !!state.editingId ||
-    $('#panel').classList.contains('show') || $('#editor').classList.contains('show') ||
+    (panel && panel.classList.contains('show')) || (editor && editor.classList.contains('show')) ||
     !!document.querySelector('.modal.show');
   $('#btn-back').style.display = show ? 'flex' : 'none';
 }
 
 function goBack() {
-  if ($('#editor').classList.contains('show')) { closeEditor(); return true; }
-  if ($('#panel').classList.contains('show')) { closePanel(); return true; }
+  const panel = $('#panel'), editor = $('#editor');
+  if (editor && editor.classList.contains('show')) { closeEditor(); return true; }
+  if (panel && panel.classList.contains('show')) { closePanel(); return true; }
   const modal = document.querySelector('.modal.show');
   if (modal) { closeModal(modal.id); return true; }
   if (state.catView) { state.catView = null; renderCategories(); return true; }
@@ -901,12 +903,12 @@ document.addEventListener('android-save-note', async (e) => {
 (async function boot() {
   if (window.AndroidBridge) {
     document.body.classList.add('android');
-    // Remove the in-page pen and panel outright inside the native app, so the
-    // OS-level floating pen service is the only pen on screen.
+    // Keep the in-page pen and panel elements in the DOM (other code still
+    // references them) but hide them, so only the OS-level floating pen shows.
     const penEl = document.getElementById('pen');
-    if (penEl) penEl.remove();
+    if (penEl) penEl.style.display = 'none';
     const panelEl = document.getElementById('panel');
-    if (panelEl) panelEl.remove();
+    if (panelEl) panelEl.style.display = 'none';
   }
   initSupabase(); await initStore(); await getSessionUser();
   renderList(); state.activeSession = await store.getActiveSession();

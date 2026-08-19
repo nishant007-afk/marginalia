@@ -121,6 +121,7 @@ function switchView(name) {
     t.classList.toggle('active', active);
   });
   closeSidebar();
+  setPageTitle(pageTitleFor(name));
   if (name==='all') renderList();
   else if (name==='categories') renderCategories();
   else if (name==='review') renderReview();
@@ -135,7 +136,19 @@ function updateBackButton() {
   const show = state.view !== 'all' || !!state.catView || !!state.editingId ||
     (panel && panel.classList.contains('show')) || (editor && editor.classList.contains('show')) ||
     !!document.querySelector('.modal.show');
-  $('#btn-back').style.display = show ? 'flex' : 'none';
+  const backBtn = $('#btn-back'), menuBtn = $('#btn-menu');
+  backBtn.style.display = show ? 'flex' : 'none';
+  if (menuBtn) menuBtn.style.display = show ? 'none' : 'flex';
+}
+
+function setPageTitle(t) {
+  const el = $('#tb-brand');
+  if (el) el.textContent = t;
+}
+function pageTitleFor(name) {
+  const map = { all:'Marginalia', categories:'Categories', review:'Review', sessions:'Sessions', settings:'Settings',
+    'set-account':'Account', 'set-appearance':'Appearance', 'set-updates':'Updates', 'set-data':'Data & backup', 'set-pen':'Floating pen', 'set-help':'Help' };
+  return map[name] || 'Marginalia';
 }
 
 function goBack() {
@@ -174,6 +187,7 @@ async function openCategoryPage(cat) {
   state.catView = cat;
   $$('.view').forEach(v => v.classList.remove('show'));
   $('#v-cat').classList.add('show');
+  setPageTitle(CATEGORIES[cat].label);
   $('#cat-page-title').textContent = CATEGORIES[cat].label;
   $('#cat-page-sub').textContent = CATEGORIES[cat].prompt;
   const notes = await store.listNotes({ category: cat });
@@ -483,9 +497,14 @@ $$('#tabbar .tab').forEach(t => t.addEventListener('click', () => switchView(t.d
 /* ============================================================ SETTINGS */
 async function renderSettings() {
   renderTopbarAuth();
+  const sub = $('#set-account-sub');
+  if (sub) sub.textContent = currentUser ? esc(currentUser.email) : 'Not signed in';
+  renderAppVersion();
 }
 function renderAuthSection() {
   const authEl = $('#auth-section');
+  const sub = $('#set-account-sub');
+  if (sub) sub.textContent = currentUser ? esc(currentUser.email) : 'Not signed in';
   if (!authEl) return;
   if (currentUser) {
     authEl.innerHTML = '<div style="font-size:13px;margin-bottom:8px">Signed in as <strong>'+esc(currentUser.email)+'</strong></div>'+
@@ -498,14 +517,57 @@ function renderAuthSection() {
   }
 }
 function renderSettingsPage(name) {
-  if (name === 'set-account') renderAuthSection();
+  if (name === 'set-account') { renderAuthSection(); renderSyncServerSection(); }
   else if (name === 'set-appearance') renderAppearance();
   else if (name === 'set-updates') renderAppVersion();
   else if (name === 'set-pen') renderPenToggle();
   renderTopbarAuth();
 }
-$$('.set-row').forEach(r => r.addEventListener('click', () => switchView(r.dataset.set ? 'set-' + r.dataset.set : 'settings')));
+$$('.set-row[data-set]').forEach(r => r.addEventListener('click', () => switchView('set-' + r.dataset.set)));
 $$('.set-back').forEach(b => b.addEventListener('click', () => switchView('settings')));
+
+/* ---- Sync server (optional custom Supabase project) ---- */
+function renderSyncServerSection() {
+  const status = $('#sync-server-status');
+  if (!status) return;
+  status.textContent = getStoredCreds() ? 'Using a custom server' : 'Using the built-in server';
+  const fields = $('#sync-server-fields');
+  if (fields) {
+    const open = fields.hidden === false;
+    const chevron = $('#sync-server-toggle i.fa-angle-down, #sync-server-toggle i.fa-angle-right');
+    if (chevron) chevron.className = open ? 'fa-solid fa-angle-up' : 'fa-solid fa-angle-down';
+  }
+}
+$('#sync-server-toggle').addEventListener('click', () => {
+  const fields = $('#sync-server-fields');
+  fields.hidden = !fields.hidden;
+  if (!fields.hidden) {
+    const cfg = getSupabaseConfig();
+    $('#sync-url2').value = cfg.url || '';
+    $('#sync-key2').value = cfg.key || '';
+  }
+  renderSyncServerSection();
+});
+$('#sync-save2').addEventListener('click', () => {
+  const url = $('#sync-url2').value.trim();
+  const key = $('#sync-key2').value.trim();
+  if (!url || !key) { toast('Enter both the project URL and anon key'); return; }
+  localStorage.setItem(SYNC_CREDS_KEY, JSON.stringify({ url, key }));
+  initSupabase();
+  currentUser = null;
+  renderAuthSection();
+  renderSyncServerSection();
+  toast('Server saved. Sign in to test it.');
+});
+$('#sync-reset2').addEventListener('click', () => {
+  localStorage.removeItem(SYNC_CREDS_KEY);
+  initSupabase();
+  currentUser = null;
+  $('#sync-server-fields').hidden = true;
+  renderAuthSection();
+  renderSyncServerSection();
+  toast('Using the built-in server');
+});
 window.showAuthModal = () => { $('#auth-error').hidden = true; $('#modal-auth').classList.add('show'); updateBackButton(); };
 window.closeModal = (id) => { document.getElementById(id).classList.remove('show'); updateBackButton(); };
 window.doSignOut = async () => { await signOut(); renderSettings(); renderTopbarAuth(); toast('Signed out'); };
@@ -679,7 +741,13 @@ $('#auth-submit').addEventListener('click', async () => {
     }
   } catch (e) {
     let msg = e.message || 'Sign in failed';
-    if (/fetch|network|failed to fetch/i.test(msg)) msg = "Can't reach the sync server right now. Check your internet connection and try again.";
+    if (/fetch|network|failed to fetch/i.test(msg)) {
+      if (getStoredCreds()) {
+        msg = "Can't reach your sync server. Check the URL in Account and your internet connection.";
+      } else {
+        msg = "The built-in sync server is no longer available. Connect your own server in Settings → Account.";
+      }
+    }
     else if (msg.includes('already registered')) msg = 'This email is already registered. Try signing in.';
     else if (msg.includes('Invalid login')) msg = 'Wrong email or password.';
     else if (msg.includes('Email not confirmed')) msg = 'Email not confirmed. Check your inbox.';
@@ -817,12 +885,15 @@ function setApkStatus(msg) {
 
 function renderAppVersion() {
   const el = $('#apk-ver-line');
-  if (!el) return;
-  if (window.AndroidBridge && window.AndroidBridge.getAppVersionName) {
-    el.textContent = 'v' + window.AndroidBridge.getAppVersionName();
-  } else {
-    el.textContent = '—';
+  if (el) {
+    if (window.AndroidBridge && window.AndroidBridge.getAppVersionName) {
+      el.textContent = 'v' + window.AndroidBridge.getAppVersionName();
+    } else {
+      el.textContent = '—';
+    }
   }
+  const sub = $('#set-upd-sub');
+  if (sub) sub.textContent = window.AndroidBridge && window.AndroidBridge.getAppVersionName ? 'App version ' + window.AndroidBridge.getAppVersionName() : 'App version';
 }
 
 async function checkApkUpdate(force) {
@@ -1004,6 +1075,7 @@ document.addEventListener('android-save-note', async (e) => {
   renderTopbarAuth();
   renderActiveBanner();
   updateBackButton();
+  setPageTitle('Marginalia');
   if (navigator.onLine && currentUser) flushSyncQueue();
   hideSplash();
 })();

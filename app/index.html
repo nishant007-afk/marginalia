@@ -237,11 +237,21 @@
     .set-ver strong { color: var(--tx); }
     .crash-box { font-size: 11.5px; color: var(--tx3); margin-top: 10px; line-height: 1.5; background: var(--bg3); border: 1px solid var(--bd); border-radius: 10px; padding: 10px; white-space: pre-wrap; word-break: break-all; display: none; }
     .set-menu { display: flex; flex-direction: column; gap: 8px; }
-    .set-row { display: flex; align-items: center; gap: 14px; padding: 15px 16px; background: var(--bg2); border: 1px solid var(--bd); border-radius: 12px; color: var(--tx); font-size: 15px; text-align: left; cursor: pointer; }
+    .set-group { margin-bottom: 20px; }
+    .set-group-h { font-size: 12px; font-weight: 600; letter-spacing: .6px; color: var(--tx3); text-transform: uppercase; margin: 0 4px 8px; }
+    .set-card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 14px; overflow: hidden; }
+    .set-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 15px 16px; color: var(--tx); font-size: 15px; text-align: left; cursor: pointer; }
     .set-row:active { background: var(--bg3); }
-    .set-row i:first-child { width: 20px; text-align: center; color: var(--ac); font-size: 15px; flex: none; }
-    .set-row span { flex: 1; }
-    .set-row .fa-angle-right { color: var(--tx3); font-size: 14px; }
+    .set-row > i:first-child { width: 22px; text-align: center; color: var(--ac); font-size: 15px; flex: none; }
+    .set-row .set-label { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .set-row .set-label b { font-weight: 600; font-size: 15px; }
+    .set-row .set-label em { font-style: normal; font-size: 12px; color: var(--tx3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .set-row > .fa-angle-right { color: var(--tx3); font-size: 13px; }
+    .set-sep { height: 1px; background: var(--bd); margin: 0 16px; }
+    input.switch { width: 46px; height: 26px; appearance: none; -webkit-appearance: none; background: var(--bg4); border-radius: 999px; position: relative; flex: none; transition: background .2s; cursor: pointer; margin: 0; }
+    input.switch:checked { background: var(--ac); }
+    input.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+    input.switch:checked::after { transform: translateX(20px); }
 
     /* ---- AUTH MODAL ---- */
     .auth-badge { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 16px; background: var(--ac2); color: var(--ac); display: flex; align-items: center; justify-content: center; }
@@ -361,59 +371,85 @@
     </div>
     <div class="view" id="v-settings">
       <div class="vh">Settings</div>
-      <div class="set-menu">
-        <button class="set-row" data-set="account"><i class="fa-solid fa-user" aria-hidden="true"></i><span>Account</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
-        <button class="set-row" data-set="appearance"><i class="fa-solid fa-palette" aria-hidden="true"></i><span>Appearance</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
-        <button class="set-row" data-set="updates"><i class="fa-solid fa-rotate" aria-hidden="true"></i><span>Updates</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
-        <button class="set-row" data-set="data"><i class="fa-solid fa-database" aria-hidden="true"></i><span>Data & backup</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
-        <button class="set-row" data-set="pen"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i><span>Floating pen</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
-        <button class="set-row" data-set="help"><i class="fa-solid fa-circle-question" aria-hidden="true"></i><span>Help & troubleshooting</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+      <div class="set-group">
+        <div class="set-group-h">General</div>
+        <div class="set-card">
+          <button class="set-row" data-set="account"><i class="fa-solid fa-user" aria-hidden="true"></i><span class="set-label"><b>Account</b><em id="set-account-sub">Not signed in</em></span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+          <div class="set-sep"></div>
+          <button class="set-row" data-set="appearance"><i class="fa-solid fa-palette" aria-hidden="true"></i><span class="set-label"><b>Appearance</b><em>Theme and list style</em></span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+          <div class="set-sep"></div>
+          <button class="set-row" data-set="pen"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i><span class="set-label"><b>Floating pen</b><em>Quick capture</em></span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="set-group">
+        <div class="set-group-h">Storage</div>
+        <div class="set-card">
+          <button class="set-row" data-set="data"><i class="fa-solid fa-database" aria-hidden="true"></i><span class="set-label"><b>Data & backup</b><em>Export, backup, restore</em></span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+          <div class="set-sep"></div>
+          <button class="set-row" data-set="updates"><i class="fa-solid fa-rotate" aria-hidden="true"></i><span class="set-label"><b>Updates</b><em id="set-upd-sub">App version</em></span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="set-group">
+        <div class="set-group-h">Support</div>
+        <div class="set-card">
+          <button class="set-row" data-set="help"><i class="fa-solid fa-circle-question" aria-hidden="true"></i><span class="set-label"><b>Help & troubleshooting</b><em>Crash log and diagnostics</em></span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        </div>
       </div>
     </div>
     <div class="view" id="v-set-account">
-      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
       <div class="vh">Account</div>
-      <div class="set-sec"><div id="auth-section"></div></div>
-    </div>
-    <div class="view" id="v-set-appearance">
-      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
-      <div class="vh">Appearance</div>
-      <div class="set-sec">
-        <label class="switch-row"><input type="checkbox" id="set-compact" /><span>Compact lists</span></label>
-        <label class="switch-row"><input type="checkbox" id="set-serif" /><span>Serif note titles</span></label>
-        <p class="set-note">Saved on this device.</p>
+      <div class="set-card"><div id="auth-section"></div></div>
+      <div class="set-group">
+        <div class="set-group-h">Sync server</div>
+        <div class="set-card">
+          <button class="set-row" id="sync-server-toggle"><i class="fa-solid fa-server" aria-hidden="true"></i><span class="set-label"><b>Connect my own server</b><em id="sync-server-status">Using the built-in server</em></span><i class="fa-solid fa-angle-down" aria-hidden="true"></i></button>
+          <div id="sync-server-fields" hidden>
+            <div class="set-sep"></div>
+            <div style="padding:14px 16px">
+              <input class="search" id="sync-url2" placeholder="Supabase project URL" autocomplete="off" spellcheck="false" />
+              <input class="search" id="sync-key2" placeholder="Supabase anon key" style="margin-top:8px" autocomplete="off" spellcheck="false" />
+              <button class="btn btn-g" id="sync-save2" style="width:100%;margin-top:10px">Save server</button>
+              <button class="btn btn-ghost" id="sync-reset2" style="width:100%;margin-top:6px">Use the built-in server</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    <div class="view" id="v-set-appearance">
+      <div class="vh">Appearance</div>
+      <div class="set-card">
+        <label class="set-row"><input type="checkbox" class="switch" id="set-compact" /><span class="set-label"><b>Compact lists</b><em>Denser note cards</em></span></label>
+        <div class="set-sep"></div>
+        <label class="set-row"><input type="checkbox" class="switch" id="set-serif" /><span class="set-label"><b>Serif note titles</b><em>A book-like look for titles</em></span></label>
+      </div>
+      <p class="set-note">Saved on this device.</p>
+    </div>
     <div class="view" id="v-set-updates">
-      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
       <div class="vh">Updates</div>
-      <div class="set-sec">
+      <div class="set-card" style="padding:16px">
         <button class="btn btn-p" id="set-check-apk" style="width:100%">Check for update</button>
         <p class="set-note" id="apk-update-status"></p>
         <p class="set-ver">App version: <strong id="apk-ver-line"></strong></p>
       </div>
     </div>
     <div class="view" id="v-set-data">
-      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
       <div class="vh">Data & backup</div>
-      <div class="set-sec">
+      <div class="set-card" style="padding:16px">
         <button class="btn btn-g" id="set-export" style="width:100%;margin-bottom:8px">Export all (JSON)</button>
         <button class="btn btn-g" id="set-backup" style="width:100%;margin-bottom:8px">Create backup</button>
         <button class="btn btn-g" id="set-restore" style="width:100%">Restore backup</button>
       </div>
     </div>
     <div class="view" id="v-set-pen">
-      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
       <div class="vh">Floating pen</div>
-      <div class="set-sec">
-        <label class="switch-row"><input type="checkbox" id="set-pen-toggle" /><span>Show the floating pen</span></label>
-        <p class="set-note">The pen starts automatically. If it ever causes a problem on your device, turn it off here and the app will stay fully open.</p>
+      <div class="set-card">
+        <label class="set-row"><input type="checkbox" class="switch" id="set-pen-toggle" /><span class="set-label"><b>Show the floating pen</b><em>Quick capture from anywhere</em></span></label>
       </div>
+      <p class="set-note">The pen starts automatically. If it ever causes a problem on your device, turn it off here and the app will stay fully open.</p>
     </div>
     <div class="view" id="v-set-help">
-      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
       <div class="vh">Help & troubleshooting</div>
-      <div class="set-sec">
+      <div class="set-card" style="padding:16px">
         <button class="btn btn-g" id="set-view-crash" style="width:100%;margin-bottom:8px">View crash log</button>
         <button class="btn btn-g" id="set-clear-crash" style="width:100%">Clear crash log</button>
         <div class="crash-box" id="crash-log-box"></div>

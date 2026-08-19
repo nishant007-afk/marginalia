@@ -113,15 +113,20 @@ let state = { view:'all', catFilter:'all', catView:null, search:'', editingId:nu
 /* ============================================================ NAVIGATION */
 function switchView(name) {
   state.view = name;
+  if (!name.startsWith('set-') && name !== 'cat') state.catView = null;
   $$('.view').forEach(v => v.classList.toggle('show', v.id === 'v-'+name));
   $$('.sb-btn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view===name));
-  $$('#tabbar .tab').forEach(t => t.classList.toggle('active', t.dataset.view===name));
+  $$('#tabbar .tab').forEach(t => {
+    const active = t.dataset.view===name || (name.startsWith('set-') && t.dataset.view==='settings');
+    t.classList.toggle('active', active);
+  });
   closeSidebar();
   if (name==='all') renderList();
   else if (name==='categories') renderCategories();
   else if (name==='review') renderReview();
   else if (name==='sessions') renderSessions();
   else if (name==='settings') renderSettings();
+  else if (name.startsWith('set-')) renderSettingsPage(name);
   updateBackButton();
 }
 
@@ -139,7 +144,8 @@ function goBack() {
   if (panel && panel.classList.contains('show')) { closePanel(); return true; }
   const modal = document.querySelector('.modal.show');
   if (modal) { closeModal(modal.id); return true; }
-  if (state.catView) { state.catView = null; renderCategories(); return true; }
+  if (state.view.startsWith('set-')) { switchView('settings'); return true; }
+  if (state.catView) { state.catView = null; renderCategories(); switchView('categories'); return true; }
   if (state.view !== 'all') { switchView('all'); return true; }
   return false;
 }
@@ -159,22 +165,28 @@ async function renderCategories() {
   for (const [k,c] of Object.entries(CATEGORIES)) {
     const card = document.createElement('div'); card.className = 'cat-card';
     card.innerHTML = '<div class="cat-icon">'+c.icon+'</div><div class="cat-name">'+c.label+'</div>';
-    card.onclick = () => { state.catView = k; showCategoryNotes(k); };
+    card.onclick = () => openCategoryPage(k);
     grid.appendChild(card);
   }
-  $('#cat-list').innerHTML = '';
   updateBackButton();
 }
-async function showCategoryNotes(cat) {
+async function openCategoryPage(cat) {
+  state.catView = cat;
+  $$('.view').forEach(v => v.classList.remove('show'));
+  $('#v-cat').classList.add('show');
+  $('#cat-page-title').textContent = CATEGORIES[cat].label;
+  $('#cat-page-sub').textContent = CATEGORIES[cat].prompt;
   const notes = await store.listNotes({ category: cat });
-  const el = $('#cat-list'); el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="btn btn-g btn-sm" id="cat-back">&larr; Back</button><span style="font-size:14px;font-weight:600">'+CATEGORIES[cat].label+'</span></div>';
-  $('#cat-back').onclick = () => { state.catView = null; renderCategories(); };
-  if (!notes.length) { el.innerHTML += '<div class="empty"><div class="ei"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></div>No notes in this category yet.</div>'; return; }
-  for (const n of notes) {
-    const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='10px';
-    card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc((CATEGORIES[cat]&&CATEGORIES[cat].label)||cat)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(notePreview(n)?'<div class="c-prev">'+esc(notePreview(n))+'</div>':'')+(n.book?'<div class="c-meta"><i class="fa-solid fa-book" aria-hidden="true"></i> '+esc(n.book)+'</div>':'');
-    card.onclick = () => openEditor(n.id); el.appendChild(card);
+  const el = $('#cat-list2'); el.innerHTML = '';
+  if (!notes.length) { el.innerHTML = '<div class="empty"><div class="ei"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></div>No notes in this category yet.</div>'; }
+  else {
+    for (const n of notes) {
+      const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom='10px';
+      card.innerHTML = '<div class="c-top"><span class="c-cat">'+esc(CATEGORIES[cat].label)+'</span><span class="c-date">'+fmtRel(n.updatedAt||n.createdAt)+'</span></div><div class="c-title">'+esc(noteTitle(n))+'</div>'+(notePreview(n)?'<div class="c-prev">'+esc(notePreview(n))+'</div>':'')+(n.book?'<div class="c-meta"><i class="fa-solid fa-book" aria-hidden="true"></i> '+esc(n.book)+'</div>':'');
+      card.onclick = () => openEditor(n.id); el.appendChild(card);
+    }
   }
+  $('#cat-back2').onclick = () => { state.catView = null; renderCategories(); switchView('categories'); };
   updateBackButton();
 }
 
@@ -470,24 +482,52 @@ $$('#tabbar .tab').forEach(t => t.addEventListener('click', () => switchView(t.d
 
 /* ============================================================ SETTINGS */
 async function renderSettings() {
-  renderAppVersion();
-  renderPenToggle();
   renderTopbarAuth();
+}
+function renderAuthSection() {
   const authEl = $('#auth-section');
+  if (!authEl) return;
   if (currentUser) {
     authEl.innerHTML = '<div style="font-size:13px;margin-bottom:8px">Signed in as <strong>'+esc(currentUser.email)+'</strong></div>'+
-      '<div style="font-size:12px;color:var(--mt);margin-bottom:8px">Notes sync automatically when online.</div>'+
+      '<div style="font-size:12px;color:var(--tx3);margin-bottom:8px">Notes sync automatically when online.</div>'+
       '<button class="btn btn-g" style="width:100%" onclick="doSignOut()">Sign out</button>'+
       '<button class="btn btn-p" style="width:100%;margin-top:8px" onclick="doSyncNow()">Sync now</button>';
   } else {
     authEl.innerHTML = '<button class="btn btn-g" style="width:100%" onclick="showAuthModal()">Sign in to sync across devices</button>'+
-      '<div style="font-size:11px;color:var(--ft);margin-top:6px">Create an account to sync notes from any device.</div>';
+      '<div style="font-size:11px;color:var(--tx3);margin-top:6px">Create an account to sync notes from any device.</div>';
   }
 }
-window.showAuthModal = () => { $('#modal-auth').classList.add('show'); updateBackButton(); };
+function renderSettingsPage(name) {
+  if (name === 'set-account') renderAuthSection();
+  else if (name === 'set-appearance') renderAppearance();
+  else if (name === 'set-updates') renderAppVersion();
+  else if (name === 'set-pen') renderPenToggle();
+  renderTopbarAuth();
+}
+$$('.set-row').forEach(r => r.addEventListener('click', () => switchView(r.dataset.set ? 'set-' + r.dataset.set : 'settings')));
+$$('.set-back').forEach(b => b.addEventListener('click', () => switchView('settings')));
+window.showAuthModal = () => { $('#auth-error').hidden = true; $('#modal-auth').classList.add('show'); updateBackButton(); };
 window.closeModal = (id) => { document.getElementById(id).classList.remove('show'); updateBackButton(); };
 window.doSignOut = async () => { await signOut(); renderSettings(); renderTopbarAuth(); toast('Signed out'); };
 window.doSyncNow = async () => { if (!navigator.onLine) { toast('Offline. Will sync when connected.'); return; } toast('Syncing...'); await fullSync(); };
+
+/* ---- Appearance ---- */
+function getAppearance() { try { return JSON.parse(localStorage.getItem('marg-appearance') || '{}'); } catch (e) { return {}; } }
+function applyAppearance() {
+  const ap = getAppearance();
+  document.body.classList.toggle('compact', !!ap.compact);
+  document.body.classList.toggle('seriftitles', !!ap.serifTitles);
+}
+function renderAppearance() {
+  const ap = getAppearance();
+  const c = $('#set-compact'), s = $('#set-serif');
+  if (c) c.checked = !!ap.compact;
+  if (s) s.checked = !!ap.serifTitles;
+}
+const compactToggle = document.getElementById('set-compact');
+const serifToggle = document.getElementById('set-serif');
+if (compactToggle) compactToggle.addEventListener('change', e => { const ap = getAppearance(); ap.compact = e.target.checked; localStorage.setItem('marg-appearance', JSON.stringify(ap)); applyAppearance(); });
+if (serifToggle) serifToggle.addEventListener('change', e => { const ap = getAppearance(); ap.serifTitles = e.target.checked; localStorage.setItem('marg-appearance', JSON.stringify(ap)); applyAppearance(); });
 
 /* ---- Account button on the top bar ---- */
 function renderTopbarAuth() {
@@ -584,20 +624,20 @@ function initSupabase() {
   return false;
 }
 async function signUp(email, password) {
-  if (!sb) throw new Error('Sync is not configured. Add your Supabase credentials in Settings.');
+  if (!sb) throw new Error('Sync could not start. Check your connection and try again.');
   const { data, error } = await sb.auth.signUp({ email, password }, {
     emailRedirectTo: window.location.origin + window.location.pathname
   });
   if (error) throw error;
   currentUser = data.session ? data.session.user : (data.user || null);
-  if (data.session) await fullSync();
+  if (data.session) await fullSync().catch(()=>{});
   return data;
 }
 async function signIn(email, password) {
-  if (!sb) throw new Error('Sync is not configured. Add your Supabase credentials in Settings.');
+  if (!sb) throw new Error('Sync could not start. Check your connection and try again.');
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
   if (error) throw error;
-  currentUser = data.user; await fullSync(); return data;
+  currentUser = data.user; await fullSync().catch(()=>{}); return data;
 }
 async function signOut() { if (sb) await sb.auth.signOut(); currentUser = null; }
 async function getSessionUser() {
@@ -617,12 +657,16 @@ $('#auth-toggle').addEventListener('click', () => {
 
 $('#auth-submit').addEventListener('click', async () => {
   const email=$('#auth-email').value.trim(), pass=$('#auth-pass').value;
+  const btn=$('#auth-submit'), errEl=$('#auth-error');
+  errEl.hidden = true;
   if (!email||!pass) { toast('Enter email and password'); return; }
+  btn.disabled = true;
+  btn.textContent = authMode==='signin' ? 'Signing in...' : 'Creating account...';
   try {
     if (authMode==='signin') {
       await signIn(email,pass);
       toast('Signed in');
-      closeModal('modal-auth'); renderSettings();
+      closeModal('modal-auth'); switchView('settings');
     } else {
       const r = await signUp(email,pass);
       if (!r.session) {
@@ -630,18 +674,23 @@ $('#auth-submit').addEventListener('click', async () => {
         closeModal('modal-auth');
       } else {
         toast('Account created and signed in');
-        closeModal('modal-auth'); renderSettings();
+        closeModal('modal-auth'); switchView('settings');
       }
     }
   } catch (e) {
-    let msg = e.message || 'Auth failed';
-    if (msg.includes('already registered')) msg = 'This email is already registered. Try signing in.';
+    let msg = e.message || 'Sign in failed';
+    if (/fetch|network|failed to fetch/i.test(msg)) msg = "Can't reach the sync server right now. Check your internet connection and try again.";
+    else if (msg.includes('already registered')) msg = 'This email is already registered. Try signing in.';
     else if (msg.includes('Invalid login')) msg = 'Wrong email or password.';
     else if (msg.includes('Email not confirmed')) msg = 'Email not confirmed. Check your inbox.';
     else if (msg.includes('over_email_send')) msg = 'Too many attempts. Wait a minute and try again.';
-    toast(msg);
+    errEl.textContent = msg; errEl.hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode==='signin' ? 'Sign in' : 'Create account';
   }
 });
+$('#auth-close').addEventListener('click', () => closeModal('modal-auth'));
 
 // Password eye toggle
 $('#auth-eye').addEventListener('click', () => {
@@ -947,6 +996,7 @@ document.addEventListener('android-save-note', async (e) => {
     if (panelEl) panelEl.style.display = 'none';
   }
   initSupabase(); await initStore(); await getSessionUser();
+  applyAppearance();
   if (!store) setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
   renderList(); state.activeSession = await store.getActiveSession();
   updateSyncDot();

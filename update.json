@@ -3,15 +3,16 @@
   "versionName": "1.6.7",
   "apkUrl": "Marginalia-1.6.7.apk",
   "notes": [
-    "Fixed the crash when turning off 'Show the floating pen' in Settings.",
-    "New: select text in any PDF or app, tap 'Note down' in the text toolbar, and the selected line lands in Marginalia for you to file under a category.",
-    "Completely redesigned to feel clean and professional, inspired by notebook apps: calm dark surfaces, tidy note cards with category, title and a preview, and clear typography.",
-    "Easier navigation with a bottom bar: All, Categories, Review, Sessions, Settings. The active tab is highlighted.",
-    "Category chips now show their icon and a clearer selected state.",
-    "Only one floating pen appears, and its quick-capture popup fits all categories.",
-    "A loading screen appears while the app opens, then fades away when your notes are ready.",
-    "The app always loads the newest version when online, so updates appear immediately.",
-    "Sessions start instantly, even offline. Press Enter or tap Start after entering book and author, and a Reading banner appears."
+    "Categories now open on their own dedicated page with a back button, instead of stacking below the grid.",
+    "Settings restructured into a clean menu: Account, Appearance, Updates, Data & backup, Floating pen, and Help. Tap an item to open its specifics.",
+    "New Appearance options: compact lists and serif note titles.",
+    "Sign in / create account screen redesigned and clearer, with a proper message when the sync server cannot be reached right now.",
+    "More reliable signing in: the app now loads its sync library from a faster source and shows a friendly message instead of a raw 'failed to fetch'.",
+    "Removed unnecessary icons where they were not needed. Cleaner, easier-to-read screens throughout.",
+    "Easier navigation with the bottom bar: All, Categories, Review, Sessions, Settings.",
+    "Fixed the crash when turning off 'Show the floating pen'.",
+    "New: select text in any PDF or app, tap 'Note down' in the text toolbar, and the line lands in Marginalia to file under a category.",
+    "A loading screen appears while the app opens, then fades when your notes are ready. The app always loads the newest version when online."
   ],
   "minVersionCode": 1
 }

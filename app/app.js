@@ -1134,7 +1134,14 @@ document.addEventListener('android-save-note', async (e) => {
     const panelEl = document.getElementById('panel');
     if (panelEl) panelEl.style.display = 'none';
   }
-  await initStore(); await initSupabase(); await getSessionUser();
+  try {
+    await initStore(); await initSupabase(); await getSessionUser();
+  } catch (e) {
+    console.error('Init failed:', e);
+    setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
+    hideSplash();
+    return;
+  }
   applyAppearance();
   if (!store) {
     setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);

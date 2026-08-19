@@ -28,36 +28,104 @@ function getJsErrors() {
 }
 
 /* ================================================================ STORE */
-const Store = window.MarginaliaStore && window.MarginaliaStore.Store || (function() {
+let StoreClass = window.MarginaliaStore && window.MarginaliaStore.Store;
+const Store = StoreClass || class {
   // Fallback Store class if MarginaliaStore is not globally defined
-  class Store {
-    constructor(dbName, dbType) {
-      this.dbName = dbName;
-      this.dbType = dbType;
-      this.db = null;
-    }
-    async loadAsync() {
-      try {
-        const request = indexedDB.open(this.dbName, 1);
-        await new Promise((resolve, reject) => {
-          request.onupgradeneeded = (e) => {
-            const db = request.result;
-            if (!db.objectStoreNames.contains('kv')) {
-              db.createObjectStore('kv');
-            }
-          };
-          request.onsuccess = (e) => {
-            this.db = e.target.result;
-            resolve();
-          };
-          request.onerror = (e) => reject(e);
-        });
-      } catch (e) { /* IndexedDB not available */ }
-    }
+  constructor(dbName, dbType) {
+    this.dbName = dbName;
+    this.dbType = dbType;
+    this.db = null;
+    this.notes = [];
+    this.settings = {};
   }
-  return Store;
-})();
-const IDB = {
+  async loadAsync() {
+    try {
+      // Try IndexedDB first
+      const request = indexedDB.open(this.dbName, 1);
+      await new Promise((resolve, reject) => {
+        request.onupgradeneeded = (e) => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('kv')) {
+            db.createObjectStore('kv');
+          }
+        };
+        request.onsuccess = (e) => {
+          this.db = e.target.result;
+          // Populate notes from IndexedDB if available
+          if (this.db) {
+            const tx = this.db.transaction('kv', 'readonly');
+            const store = tx.objectStore('kv');
+            const getAll = store.getAllKeys();
+            getAll.onsuccess = () => {
+              this.notes = [];
+              const keys = getAll.result;
+              for (const key of keys) {
+                const req = store.get(key);
+                req.onsuccess = () => {
+                  this.notes.push(req.result);
+                };
+              }
+            };
+          }
+          resolve();
+        };
+        request.onerror = (e) => { /* IndexedDB error, use in-memory */ };
+      });
+    } catch (e) { /* IndexedDB not available, use in-memory */ }
+  }
+  async getNote(id) {
+    const note = this.notes.find(n => n && n.id === id);
+    return note || null;
+  }
+  async listNotes(filters) {
+    let results = this.notes;
+    if (filters?.category) {
+      results = results.filter(n => n.category === filters.category);
+    }
+    if (filters?.query) {
+      const q = filters.query.toLowerCase();
+      results = results.filter(n => 
+        (n.title && n.title.toLowerCase().includes(q)) ||
+        (n.content && n.content.toLowerCase().includes(q))
+      );
+    }
+    return results;
+  }
+  async createNote(note) {
+    note.id = note.id || Date.now().toString();
+    note.category = note.category || 'observe';
+    note.title = note.title || '';
+    note.content = note.content || '';
+    this.notes.push(note);
+    return note;
+  }
+  async updateNote(id, updates) {
+    const idx = this.notes.findIndex(n => n && n.id === id);
+    if (idx >= 0) {
+      Object.assign(this.notes[idx], updates);
+      return this.notes[idx];
+    }
+    return null;
+  }
+  async deleteNote(id) {
+    this.notes = this.notes.filter(n => n && n.id !== id);
+  }
+  async getStats() {
+    return { total: this.notes.length };
+  }
+  async createSession(session) {
+    session.id = session.id || Date.now().toString();
+    this.sessions = this.sessions || [];
+    this.sessions.push(session);
+    return session;
+  }
+  async getSession(id) {
+    return this.sessions?.find(s => s?.id === id) || null;
+  }
+  async listSessions() {
+    return this.sessions || [];
+  }
+};
   async: true, ensureDir: async () => {},
   read: async (file) => {
     const key = file.endsWith('.bak') ? 'lib.bak' : 'lib';
@@ -1127,28 +1195,30 @@ document.addEventListener('android-save-note', async (e) => {
   setTimeout(hideSplash, 5000);
   if (window.AndroidBridge) {
     document.body.classList.add('android');
-    // Keep the in-page pen and panel elements in the DOM (other code still
-    // references them) but hide them, so only the OS-level floating pen shows.
     const penEl = document.getElementById('pen');
     if (penEl) penEl.style.display = 'none';
     const panelEl = document.getElementById('panel');
     if (panelEl) panelEl.style.display = 'none';
   }
-  try {
-    await initStore(); await initSupabase(); await getSessionUser();
-  } catch (e) {
-    console.error('Init failed:', e);
-    setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
-    hideSplash();
-    return;
-  }
+  // Initialize in sequence, each step gracefully degrades
+  try { await initStore(); } catch (e) { console.error('initStore failed:', e); }
+  try { await initSupabase(); } catch (e) { console.error('initSupabase failed:', e); }
+  try { await getSessionUser(); } catch (e) { console.error('getSessionUser failed:', e); }
   applyAppearance();
-  if (!store) {
+  // Graceful store check - if store isn't ready, show message and return
+  if (!store || !store.getNote) {
     setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
     hideSplash();
     return;
   }
-  renderList(); state.activeSession = await store.getActiveSession();
+  try {
+    renderList(); state.activeSession = await store.getActiveSession();
+  } catch (e) {
+    console.error('Render init failed:', e);
+    setTimeout(() => toast('Could not open your notes. Check your connection and restart the app.'), 600);
+    hideSplash();
+    return;
+  }
   updateSyncDot();
   renderAppVersion();
   renderTopbarAuth();

@@ -4,17 +4,14 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Gold pen mark -->
-    <path
-        android:fillColor="#D4A853"
-        android:pathData="M54,28 L78,52 L69,61 L45,37 Z" />
-    <path
-        android:fillColor="#D4A853"
-        android:pathData="M45,37 L69,61 L61,69 L37,45 Z" />
-    <path
-        android:fillColor="#D4A853"
-        android:pathData="M37,45 L41,33 L53,37 Z" />
-    <path
-        android:fillColor="#D4A853"
-        android:pathData="M54,80 L63,80 L63,71 L54,71 Z" />
+    <!-- Font Awesome pen-nib mark (same as the landing page icon) -->
+    <group
+        android:scaleX="0.125"
+        android:scaleY="0.125"
+        android:translateX="22"
+        android:translateY="22">
+        <path
+            android:fillColor="#111111"
+            android:pathData="M368.4 18.3L312.7 74.1 437.9 199.3l55.7-55.7c21.9-21.9 21.9-57.3 0-79.2L447.6 18.3c-21.9-21.9-57.3-21.9-79.2 0zM288 94.6l-9.2 2.8L134.7 140.6c-19.9 6-35.7 21.2-42.3 41L3.8 445.8c-3.8 11.3-1 23.9 7.3 32.4L164.7 324.7c-3-6.3-4.7-13.3-4.7-20.7c0-26.5 21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48c-7.4 0-14.4-1.7-20.7-4.7L33.7 500.9c8.6 8.3 21.1 11.2 32.4 7.3l264.3-88.6c19.7-6.6 35-22.4 41-42.3l43.2-144.1 2.7-9.2L288 94.6z"/>
+    </group>
 </vector>

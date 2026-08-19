@@ -1,14 +1,15 @@
 {
-  "versionCode": 10,
-  "versionName": "1.6.2",
-  "apkUrl": "Marginalia-1.6.2.apk",
+  "versionCode": 11,
+  "versionName": "1.6.3",
+  "apkUrl": "Marginalia-1.6.3.apk",
   "notes": [
-    "Fixed the actual crash: the floating pen service was reading screen dimensions before the app was ready, which closed the app right after opening. The app now starts reliably.",
-    "The floating pen still appears, follows wherever you drag it, and stops cleanly when you close the app.",
-    "You can turn the floating pen on/off in Settings.",
-    "Android downloads use versioned file names, so you always get the newest APK.",
-    "The app fits every phone screen, with a back button and Android back-key navigation.",
-    "Crash diagnostics in Settings → Troubleshooting."
+    "The app icon and the floating pen now use the same gold pen mark as the website icon.",
+    "Only one pen appears now: the floating pen. The in-page pen is fully hidden inside the app.",
+    "Cleaned up Settings: removed the sync-server fields, the duplicate update checks, and the web version line. There is now a single Check for update button with your current app version shown below it.",
+    "Added a Sign in button on the home screen when you are logged out, and your profile picture when you are signed in.",
+    "A small hint now shows there are more categories to swipe through (All, Observe, Images, Connections, and more).",
+    "Reading sessions work properly: an active session shows a Reading banner, and sessions now have End, Resume, and Delete controls.",
+    "A tidy, cleaned-up interface throughout."
   ],
   "minVersionCode": 1
 }

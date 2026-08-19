@@ -3,16 +3,15 @@
   "versionName": "1.6.7",
   "apkUrl": "Marginalia-1.6.7.apk",
   "notes": [
-    "Categories now open on their own dedicated page with a back button, instead of stacking below the grid.",
-    "Settings restructured into a clean menu: Account, Appearance, Updates, Data & backup, Floating pen, and Help. Tap an item to open its specifics.",
-    "New Appearance options: compact lists and serif note titles.",
-    "Sign in / create account screen redesigned and clearer, with a proper message when the sync server cannot be reached right now.",
-    "More reliable signing in: the app now loads its sync library from a faster source and shows a friendly message instead of a raw 'failed to fetch'.",
-    "Removed unnecessary icons where they were not needed. Cleaner, easier-to-read screens throughout.",
-    "Easier navigation with the bottom bar: All, Categories, Review, Sessions, Settings.",
+    "Settings redesigned like a modern app: grouped sections (General, Storage, Support) with tidy rows and clear descriptions.",
+    "Every screen shows its name in the top bar, so you always know where you are, with a back arrow that appears when needed.",
+    "New Appearance toggles: compact lists and serif note titles, with modern switch controls.",
+    "Account page got a sync-server section: you can connect your own Supabase project if the built-in server is unavailable, or reset back to the built-in one.",
+    "Signing in now explains clearly when the server cannot be reached, instead of a raw fetch error.",
+    "Categories open on their own dedicated page.",
     "Fixed the crash when turning off 'Show the floating pen'.",
-    "New: select text in any PDF or app, tap 'Note down' in the text toolbar, and the line lands in Marginalia to file under a category.",
-    "A loading screen appears while the app opens, then fades when your notes are ready. The app always loads the newest version when online."
+    "Select text in any PDF, tap 'Note down', and file the line in a category.",
+    "Loading screen on open, and the app always loads the newest version when online."
   ],
   "minVersionCode": 1
 }

@@ -96,6 +96,7 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 injectFloatingPen();
+                hideInAppPen();
             }
 
             @Override
@@ -161,6 +162,18 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
             startFloatingPen();
         }
+    }
+
+    // The web app contains its own in-page pen and quick-capture panel. Inside
+    // the native app only the OS-level floating pen should exist, so remove the
+    // web ones from the page on every load (immune to any web cache staleness).
+    private void hideInAppPen() {
+        if (webView == null) return;
+        try {
+            webView.evaluateJavascript(
+                "(function(){var b=document.body;if(!b)return;b.classList.add('android');b.classList.add('appmode');var p=document.getElementById('pen');if(p)p.remove();var q=document.getElementById('panel');if(q)q.remove();})();",
+                null);
+        } catch (Exception ignored) {}
     }
 
     void startFloatingPen() {

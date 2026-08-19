@@ -115,10 +115,14 @@ public class FloatingPenService extends Service {
         bg.setColor(Color.parseColor("#D4A853"));
         container.setBackground(bg);
 
-        // Pen icon (vector drawable, Font Awesome style)
+        // Pen icon (the same pen-nib mark as the app icon), inset so it fits
+        // comfortably inside the gold circle instead of stretching edge to edge.
         ImageView icon = new ImageView(this);
         icon.setImageResource(R.drawable.ic_pen);
-        icon.setLayoutParams(new FrameLayout.LayoutParams(penSize, penSize));
+        int iconSize = Math.round(penSize * 0.56f);
+        FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(iconSize, iconSize);
+        iconParams.gravity = Gravity.CENTER;
+        icon.setLayoutParams(iconParams);
         container.addView(icon);
 
         penParams = new WindowManager.LayoutParams(

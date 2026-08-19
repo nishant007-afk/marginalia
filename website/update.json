@@ -1,15 +1,16 @@
 {
-  "versionCode": 11,
-  "versionName": "1.6.3",
-  "apkUrl": "Marginalia-1.6.3.apk",
+  "versionCode": 12,
+  "versionName": "1.6.4",
+  "apkUrl": "Marginalia-1.6.4.apk",
   "notes": [
-    "The app icon and the floating pen now use the same gold pen mark as the website icon.",
-    "Only one pen appears now: the floating pen. The in-page pen is fully hidden inside the app.",
-    "Cleaned up Settings: removed the sync-server fields, the duplicate update checks, and the web version line. There is now a single Check for update button with your current app version shown below it.",
-    "Added a Sign in button on the home screen when you are logged out, and your profile picture when you are signed in.",
-    "A small hint now shows there are more categories to swipe through (All, Observe, Images, Connections, and more).",
-    "Reading sessions work properly: an active session shows a Reading banner, and sessions now have End, Resume, and Delete controls.",
-    "A tidy, cleaned-up interface throughout."
+    "Only one pen now: the floating pen. The in-page pen is stripped from the app on every load, so two pens can never appear again.",
+    "The floating pen now shows the same pen-nib mark as the app icon, sized to fit neatly inside the gold circle.",
+    "Starting a reading session always works now, even offline. Enter the book and author, tap Start (or press Enter), and an active Reading banner appears.",
+    "Reading sessions have End, Resume, and Delete controls, and notes attach to the session that is currently running.",
+    "Settings were simplified: the sync-server fields, the duplicate update checks, and the web app version line are gone. One Check for update button, with your app version below it.",
+    "Sign in button on the home screen when logged out, your profile picture when logged in.",
+    "A hint shows there are more categories to swipe through (All, Observe, Images, Connections, and more).",
+    "Cleaner interface: relative dates on every note, a search icon, and friendlier empty states throughout."
   ],
   "minVersionCode": 1
 }

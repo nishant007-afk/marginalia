@@ -236,6 +236,24 @@
     .set-ver { font-size: 13px; color: var(--tx3); margin-top: 10px; }
     .set-ver strong { color: var(--tx); }
     .crash-box { font-size: 11.5px; color: var(--tx3); margin-top: 10px; line-height: 1.5; background: var(--bg3); border: 1px solid var(--bd); border-radius: 10px; padding: 10px; white-space: pre-wrap; word-break: break-all; display: none; }
+    .set-menu { display: flex; flex-direction: column; gap: 8px; }
+    .set-row { display: flex; align-items: center; gap: 14px; padding: 15px 16px; background: var(--bg2); border: 1px solid var(--bd); border-radius: 12px; color: var(--tx); font-size: 15px; text-align: left; cursor: pointer; }
+    .set-row:active { background: var(--bg3); }
+    .set-row i:first-child { width: 20px; text-align: center; color: var(--ac); font-size: 15px; flex: none; }
+    .set-row span { flex: 1; }
+    .set-row .fa-angle-right { color: var(--tx3); font-size: 14px; }
+
+    /* ---- AUTH MODAL ---- */
+    .auth-badge { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 16px; background: var(--ac2); color: var(--ac); display: flex; align-items: center; justify-content: center; }
+    .auth-badge i { font-size: 22px; }
+    .auth-err { background: rgba(224,85,69,.12); border: 1px solid rgba(224,85,69,.35); color: #e08a80; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+    .btn-ghost { color: var(--tx3); }
+
+    /* ---- APPEARANCE ---- */
+    body.compact .view { gap: 10px; }
+    body.compact .card { padding: 12px 14px; }
+    body.compact .c-title { font-size: 14.5px; }
+    body.seriftitles .c-title { font-family: var(--wr); }
 
     /* ---- SPLASH LOADER ---- */
     #splash { position: fixed; inset: 0; z-index: 400; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity .35s ease; }
@@ -315,7 +333,12 @@
       <div class="vh">Categories</div>
       <p class="vs">Browse by type.</p>
       <div class="cat-grid" id="cat-grid"></div>
-      <div id="cat-list" style="margin-top:12px"></div>
+    </div>
+    <div class="view" id="v-cat">
+      <button class="btn btn-g btn-sm" id="cat-back2"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; All categories</button>
+      <div class="vh" id="cat-page-title"></div>
+      <p class="vs" id="cat-page-sub"></p>
+      <div id="cat-list2"></div>
     </div>
     <div class="view" id="v-review">
       <div class="vh">Review</div>
@@ -338,33 +361,60 @@
     </div>
     <div class="view" id="v-settings">
       <div class="vh">Settings</div>
-      <div class="set-sec">
-        <div class="set-h"><i class="fa-solid fa-user" aria-hidden="true"></i> Account</div>
-        <div id="auth-section"></div>
+      <div class="set-menu">
+        <button class="set-row" data-set="account"><i class="fa-solid fa-user" aria-hidden="true"></i><span>Account</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        <button class="set-row" data-set="appearance"><i class="fa-solid fa-palette" aria-hidden="true"></i><span>Appearance</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        <button class="set-row" data-set="updates"><i class="fa-solid fa-rotate" aria-hidden="true"></i><span>Updates</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        <button class="set-row" data-set="data"><i class="fa-solid fa-database" aria-hidden="true"></i><span>Data & backup</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        <button class="set-row" data-set="pen"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i><span>Floating pen</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+        <button class="set-row" data-set="help"><i class="fa-solid fa-circle-question" aria-hidden="true"></i><span>Help & troubleshooting</span><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
       </div>
+    </div>
+    <div class="view" id="v-set-account">
+      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
+      <div class="vh">Account</div>
+      <div class="set-sec"><div id="auth-section"></div></div>
+    </div>
+    <div class="view" id="v-set-appearance">
+      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
+      <div class="vh">Appearance</div>
       <div class="set-sec">
-        <div class="set-h"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Floating pen</div>
-        <label class="switch-row">
-          <input type="checkbox" id="set-pen-toggle" />
-          <span>Show the floating pen</span>
-        </label>
-        <p class="set-note">The pen starts automatically. If it ever causes a problem on your device, turn it off here and the app will stay fully open.</p>
+        <label class="switch-row"><input type="checkbox" id="set-compact" /><span>Compact lists</span></label>
+        <label class="switch-row"><input type="checkbox" id="set-serif" /><span>Serif note titles</span></label>
+        <p class="set-note">Saved on this device.</p>
       </div>
-      <div class="set-sec" id="android-update-section">
-        <div class="set-h"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Updates</div>
-        <button class="btn btn-p" id="set-check-apk" style="width:100%"><i class="fa-solid fa-rotate" aria-hidden="true"></i>&nbsp; Check for update</button>
+    </div>
+    <div class="view" id="v-set-updates">
+      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
+      <div class="vh">Updates</div>
+      <div class="set-sec">
+        <button class="btn btn-p" id="set-check-apk" style="width:100%">Check for update</button>
         <p class="set-note" id="apk-update-status"></p>
         <p class="set-ver">App version: <strong id="apk-ver-line"></strong></p>
       </div>
+    </div>
+    <div class="view" id="v-set-data">
+      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
+      <div class="vh">Data & backup</div>
       <div class="set-sec">
-        <div class="set-h"><i class="fa-solid fa-database" aria-hidden="true"></i> Data</div>
-        <button class="btn btn-g" id="set-export" style="margin-bottom:8px;width:100%">Export all (JSON)</button>
-        <button class="btn btn-g" id="set-backup" style="margin-bottom:8px;width:100%">Create backup</button>
+        <button class="btn btn-g" id="set-export" style="width:100%;margin-bottom:8px">Export all (JSON)</button>
+        <button class="btn btn-g" id="set-backup" style="width:100%;margin-bottom:8px">Create backup</button>
         <button class="btn btn-g" id="set-restore" style="width:100%">Restore backup</button>
       </div>
+    </div>
+    <div class="view" id="v-set-pen">
+      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
+      <div class="vh">Floating pen</div>
       <div class="set-sec">
-        <div class="set-h"><i class="fa-solid fa-bug" aria-hidden="true"></i> Troubleshooting</div>
-        <button class="btn btn-g" id="set-view-crash" style="margin-bottom:8px;width:100%">View crash log</button>
+        <label class="switch-row"><input type="checkbox" id="set-pen-toggle" /><span>Show the floating pen</span></label>
+        <p class="set-note">The pen starts automatically. If it ever causes a problem on your device, turn it off here and the app will stay fully open.</p>
+      </div>
+    </div>
+    <div class="view" id="v-set-help">
+      <button class="btn btn-g btn-sm set-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>&nbsp; Settings</button>
+      <div class="vh">Help & troubleshooting</div>
+      <div class="set-sec">
+        <button class="btn btn-g" id="set-view-crash" style="width:100%;margin-bottom:8px">View crash log</button>
         <button class="btn btn-g" id="set-clear-crash" style="width:100%">Clear crash log</button>
         <div class="crash-box" id="crash-log-box"></div>
       </div>
@@ -458,25 +508,25 @@
   <!-- auth modal -->
   <div class="modal" id="modal-auth">
     <div class="modal-card">
-      <h2 id="auth-title">Sign in</h2>
-      <p id="auth-sub">Sign in to sync notes across devices.</p>
+      <div class="auth-badge"><i class="fa-solid fa-user-astronaut" aria-hidden="true"></i></div>
+      <h2 id="auth-title" style="justify-content:center">Sign in</h2>
+      <p id="auth-sub" style="text-align:center">Sign in to sync notes across devices.</p>
+      <div class="auth-err" id="auth-error" hidden></div>
       <input id="auth-email" type="email" placeholder="Email" autocomplete="email" />
       <div class="pass-wrap">
         <input id="auth-pass" type="password" placeholder="Password" autocomplete="current-password" />
         <button class="pass-eye" id="auth-eye" type="button" aria-label="Toggle password visibility"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i></button>
       </div>
-      <div class="modal-actions">
-        <button class="btn btn-g" onclick="closeModal('modal-auth')">Cancel</button>
-        <button class="btn btn-p" id="auth-submit">Sign in</button>
-        <button class="btn btn-g" id="auth-toggle">Create account</button>
-      </div>
+      <button class="btn btn-p" id="auth-submit" style="width:100%">Sign in</button>
+      <button class="btn btn-g" id="auth-toggle" style="width:100%;margin-top:8px">Create account</button>
+      <button class="btn btn-ghost" id="auth-close" style="width:100%;margin-top:8px">Cancel</button>
     </div>
   </div>
 
   <!-- update modal -->
   <div class="modal" id="modal-update">
     <div class="modal-card" style="text-align:left">
-      <h2><i class="fa-solid fa-circle-down" aria-hidden="true"></i>&nbsp; Update available</h2>
+      <h2>Update available</h2>
       <p>A new version of Marginalia is ready to install on this device.</p>
       <div class="upd-sec" style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ac);margin-bottom:8px;font-weight:600">What's new <span id="upd-ver" style="text-transform:none;font-weight:600"></span></div>
       <ul class="upd-notes" id="upd-notes"></ul>
@@ -490,7 +540,7 @@
   <!-- toast -->
   <div id="toast" class="hide"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="store.js"></script>
   <script src="app.js"></script>
